@@ -89,11 +89,10 @@ sub add_noise {
 }
 
 my $fh = new IO::File ("<scirules.in");
-my $dat = {};
-my $RE = undef;
-scigen::read_rules ($fh, $dat, \$RE, 0);
+my $scigen = scigen->new();
+$scigen->read_rules ($fh, 0);
 
-my $graph = scigen::generate ($dat, "GNUPLOT", $RE, 0, 0);
+my $graph = $scigen->generate ("GNUPLOT");
 #`perl scigen.pl -f scirules.in -s GNUPLOT -p 0`;
 #print "# [$$] func = $func\n";
 
@@ -159,9 +158,8 @@ if( $type eq "bargraph" ) {
 my @y = ();
 
 my $funcfh = new IO::File ("<functions.in");
-my $funcdat = {};
-my $funcRE = undef;
-scigen::read_rules ($funcfh, $funcdat, \$funcRE, 0);
+my $funcdat = scigen->new();
+$funcdat->read_rules ($funcfh, 0);
 
 print GPFILE "plot ";
 for( my $i = 0; $i < $curves; $i++ ) {
@@ -189,7 +187,7 @@ for( my $i = 0; $i < $curves; $i++ ) {
     my $num_points = 0;
     do {
 	@y = ();
-	my $func = scigen::generate ($funcdat, "EXPR", $funcRE, 0, 0);
+	my $func = $funcdat->generate ("EXPR");
 	#my $func = `perl scigen.pl -f functions.in -s EXPR -p 0`;
 	
 	open( DAT, ">$datafile.$i" ) or 

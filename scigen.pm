@@ -21,24 +21,29 @@ use strict;
 use IO::File;
 use Data::Dumper;
 require "./Autoformat.pm";
-use vars qw($SCIGEND_PORT);
+use vars qw($SCIGEND_PORT %SCIINFO);
 
 #### daemon settings ####
 $SCIGEND_PORT = 4724;
 
-sub dup_name {
-    my $name = shift;
-    return $name . "!!!";
-}
-
-sub file_name {
-    my $name = shift;
-    return $name . ".file";
+sub new {
+    my $class = shift;
+    return bless {
+	"rules" => {},
+	"included" => {},
+	"nodup" => {},
+	"fixed" => {},
+	"format" => {},
+	"re" => undef
+    }, $class;
 }
 
 sub read_rules {
-    my ($fh, $rules, $RE, $debug) = @_;
+    my $self = shift;
+    my ($fh, $debug) = @_;
     my $line;
+    my $rules = $self->{rules};
+    my $format = $self->{format};
     while ($line = <$fh>) {
 	next if $line =~ /^#/ ;
 	next if $line !~ /\S/ ;
@@ -48,9 +53,24 @@ sub read_rules {
 	my $rule = "";
 
 	# non-duplicate rule
-	if( $name =~ /([^\+]*)\!$/ ) {
-	    $name = $1;
-	    push @{$rules->{dup_name("$name")}}, "";
+	if( $name =~ /\A([^\+.=]*)\!\z/ ) {
+	    if (!exists($self->{nodup}->{$1})) {
+		$self->{nodup}->{$1} = [];
+	    }
+	    next;
+	}
+
+	# fixed rule
+	if( $name =~ /\A([^\+.=]*)\.\z/ ) {
+	    if (!exists($self->{fixed}->{$1})) {
+		$self->{fixed}->{$1} = undef;
+	    }
+	    next;
+	}
+
+	# formatting instruction
+	if ($name =~ /\A([^\+.=]*)=(\w*)\z/) {
+	    $format->{$1} = $2;
 	    next;
 	}
 
@@ -59,13 +79,13 @@ sub read_rules {
 	    my $file = $words[0];
 	    # make sure we haven't already included this file
 	    # NOTE: this allows the main file to be included at most twice
-	    if( defined $rules->{&file_name($file)} ) {
+	    if( defined $self->{included}->{$file} ) {
 		if( $debug > 0 ) {
 		    print "Skipping duplicate included file $file\n";
 		}
 		next;
 	    } else {
-		$rules->{&file_name($file)} = 1;
+		$self->{included}->{$file} = 1;
 	    }
 	    if( $debug > 0 ) {
 		print "Opening included file $file\n";
@@ -74,8 +94,14 @@ sub read_rules {
 	    if( !defined $inc_fh ) {
 		die( "Couldn't open included file $file" );
 	    }
-	    &read_rules( $inc_fh, $rules, undef, $debug );
+	    $self->read_rules( $inc_fh, $debug );
 	    next; # we don't want to have .include itself be a rule
+	}
+
+	# default formatting instruction
+	if (!defined($format->{$name})
+	    && $name =~ /_(?:PARAGRAPH|PAR)(?=_|\z)/) {
+	    $format->{$name} = "text";
 	}
 
 	if ($#words == 0 && $words[0] eq '{') {
@@ -111,28 +137,44 @@ sub read_rules {
 	    push @{$rules->{$name}}, $rule;
 	} while( --$weight > 0 );
     }
-
-    if( defined $RE ) {
-	compute_re( $rules, $RE );
-    }
-
+    $self->{re} = undef;
 }
 
-sub compute_re {
+sub add {
+    my ($self, $name, @options) = @_;
+    my $rules = $self->{rules};
+    if (!exists($rules->{$name})) {
+	$self->{re} = undef;
+	$rules->{$name} = [];
+    }
+    push @{$rules->{$name}}, @options;
+}
 
-    # must sort; order matters, and we want to make sure that we get
-    # the longest matches first
-    my ($rules, $RE) = @_;
-    my $in = join "|", sort { length ($b) <=> length ($a) } keys %$rules;
-    $$RE = qr/^(.*?)(${in})/s ;
+sub def {
+    my ($self, $name, @options) = @_;
+    my $rules = $self->{rules};
+    if (!exists($rules->{$name})) {
+	$self->{re} = undef;
+    }
+    $rules->{$name} = [@options];
+}
 
+sub re {
+    my $self = shift;
+    if (!defined($self->{re})) {
+	# must sort; order matters, and we want to make sure that we get
+	# the longest matches first
+	my $in = join "|", sort { length ($b) <=> length ($a) } keys %{$self->{rules}};
+	$self->{re} = qr/^(.*?)(${in})/s ;
+    }
+    $self->{re};
 }
 
 sub generate {
-    my ($rules, $start, $RE, $debug, $pretty) = @_;
+    my ($self, $start, $pretty, $debug) = @_;
 
 
-    my $s = expand ($rules, $start, $RE, $debug);
+    my $s = $self->expand ($start, $debug);
     if( $pretty ) {
 	$s = pretty_print($s);
     }
@@ -147,102 +189,66 @@ sub pick_rand {
 }
 
 sub pop_first_rule {
-    my ($rules, $preamble, $input, $rule, $RE) = @_;
+    my ($self, $preamble, $input, $rule) = @_;
 
     $$preamble = undef;
     $$rule = undef;
 
     my $ret = undef;
-    
+    my $RE = $self->re();
+
     if ($$input =~ s/$RE//s ) {
 	$$preamble = $1;
 	$$rule = $2;
 	return 1;
     }
-	
+
     return 0;
 }
 
-sub pretty_print {
+sub break_latex ($$$) {
+    my ($text, $reqlen, $fldlen) = @_;
+    if( !defined $text ) {
+	$text = "";
+    }
+    ($text, "");
+}
 
+sub pretty_print {
     my ($s) = shift;
 
     my $news = "";
     my @lines = split( /\n/, $s );
     foreach my $line (@lines) {
-
-	my $newline = "";
-
 	$line =~ s/(\s+)([\.\,\?\;\:])/$2/g;
 	$line =~ s/(\b)(a)\s+([aeiou])/$1$2n $3/gi;
 
-	if( $line =~ /\\section(\*?)\{(.*)\}/ ) {
-	    $newline = "\\section${1}{" . 
-	      Autoformat::autoformat( $2, { case => 'highlight', 
-					    squeeze => 0 } );
-	    chomp $newline;
-	    chomp $newline;
-	    $newline .= "}";
-	} elsif( $line =~ /(\\subsection)\{(.*)\}/ or
-		 $line =~ /(\\slideheading)\{(.*)\}/ ) {
-	    $newline = $1 . "{" . 
-	      Autoformat::autoformat( $2, { case => 'highlight', 
-					    squeeze => 0 } );
-	    chomp $newline;
-	    chomp $newline;
-	    $newline .= "}";
-	} elsif( $line =~ /\\title\{(.*)\}/ ) {
-	    $newline = "\\title{" . 
-	      Autoformat::autoformat( $1, { case => 'highlight', 
-					    squeeze => 0  } );
-	    chomp $newline;
-	    chomp $newline;
-	    $newline .= "}";
-	} elsif( $line =~ /(.*) = \{(.*)\}\,/ ) {
-	    my $label = $1;
-	    my $curr = $2;
-	    # place brackets around any words containing capital letters
-	    $curr =~ s/\b([^\s]*[A-Z]+[^\s\:]*)\b/\{$1\}/g;
-	    $newline = "$label = {" . 
-	      Autoformat::autoformat( $curr, { case => 'highlight', 
-					       squeeze => 0  } );
-	    chomp $newline;
-	    chomp $newline;
-	    $newline .= "},";
-	} elsif( $line =~ /\S/ ) {
-	    $newline = 
+	if( $line =~ /\S/ && $line !~ /(.*) = \{(.*)\}\,/ ) {
+	    $line = 
 	      Autoformat::autoformat( $line, { case => 'sentence', 
 					       squeeze => 0, 
-					       break => break_latex(),
-					       ignore => qr/^\\/ } );
+					       break => \&break_latex,
+					       ignore => qr/^\\/m } );
 	}
 
-	$newline =~ s/\\Em/\\em/g;
-
-	if( $newline !~ /\n$/ ) {
-	    $newline .= "\n";
+	if( $line !~ /\n$/ ) {
+	    $line .= "\n";
 	}
-	$news .= $newline;
+	$news .= $line;
 
     }
 
     return $news;
 }
 
-sub break_latex($$$) {
-    my ($text, $reqlen, $fldlen) = @_;
-    if( !defined $text ) {
-	$text = "";
-    }
-    return { $text, "" };
-}
-
 sub expand {
-    my ($rules, $start, $RE, $debug) = @_;
+    my ($self, $start, $debug) = @_;
+    my ($rules) = $self->{rules};
+    $debug = 0 if !defined($debug);
 
     # check for special rules ending in + and # 
     # Rules ending in + generate a sequential integer
-    # The same rule ending in # chooses a random # from among preiously
+    # The same rule ending in # chooses a random # from among previously
     # generated integers
     if( $start =~ /(.*)\+$/ ) {
 	my $rule = $1;
@@ -254,7 +260,9 @@ sub expand {
 	    $rules->{$rule} = $i+1;
 	}
 	return $i;
-    } elsif( $start =~ /(.*)\#$/ ) {
+    }
+
+    if( $start =~ /(.*)\#$/ ) {
 	my $rule = $1;
 	my $i = $rules->{$rule};
 	if( !defined $i ) {
@@ -264,8 +272,14 @@ sub expand {
 	}
 	return $i;
     }
-    my $full_token;
 
+    # check for fixed expansion
+    if (defined($self->{fixed}->{$start})) {
+	return $self->{fixed}->{$start};
+    }
+
+    my $format = $self->{format}->{$start};
+    my $full_token;
     my $repeat = 0;
     my $count = 0;
     do {
@@ -280,25 +294,46 @@ sub expand {
 	my @components;
 	$repeat = 0;	
 
-	while (pop_first_rule ($rules, \$pre, \$input, \$rule, $RE)) {
-	    my $ex = expand ($rules, $rule, $RE, $debug);
+	while ($self->pop_first_rule (\$pre, \$input, \$rule)) {
+	    my $ex = $self->expand ($rule, $debug);
 	    push @components, $pre if length ($pre);
 	    push @components, $ex if length ($ex);
 	}
 	push @components, $input if length ($input);
-	$full_token = join "", @components ;
-	my $ref = $rules->{dup_name("$start")};
-	if( defined $ref ) {
-	    my @dups = @{$ref};
+	$full_token = join "", @components;
+
+	if (defined($format)) {
+	    $full_token =~ s/\s+(?=[\.\,\?\;\:])//g;
+	    $full_token =~ s/\b(a)\s+(?=[aeiou])/$1n /gi;
+	    if ($format eq "title") {
+		$full_token = Autoformat::autoformat( $full_token, { case => 'highlight', squeeze => 0  } );
+		$full_token =~ s/\s+/ /gs;
+		$full_token =~ s/\A\s+|\s+\z//g;
+	    } elsif ($format eq "bibtex") {
+		$full_token =~ s/(\\\S+|\w*[A-Z][\w\*]*)/\{$1\}/g;
+		$full_token = Autoformat::autoformat( $full_token, { case => 'highlight', squeeze => 0  } );
+		1 while chomp($full_token);
+	    } elsif ($format eq "text") {
+		$full_token = Autoformat::autoformat( $full_token, { case => 'sentence',
+					       squeeze => 0,
+					       break => \&break_latex,
+					       ignore => qr/^\\/m } );
+		$full_token =~ s/  +/ /g;
+		1 while chomp($full_token);
+	    }
+	}
+
+	my $duplist = $self->{nodup}->{$start};
+	if( defined $duplist ) {
 	    # make sure we haven't generated this exact token yet
-	    foreach my $d (@dups) {
+	    foreach my $d (@$duplist) {
 		if( $d eq $full_token ) {
 		    $repeat = 1;
 		}
 	    }
 	    
 	    if( !$repeat ) {
-		push @{$rules->{dup_name("$start")}}, $full_token;
+		push @$duplist, $full_token;
 	    } elsif( $count > 50 ) {
 		$repeat = 0;
 	    }
@@ -306,6 +341,10 @@ sub expand {
 	}
 
     } while( $repeat );
+
+    if (exists($self->{fixed}->{$start})) {
+	$self->{fixed}->{$start} = $full_token;
+    }
 
     return $full_token;
     

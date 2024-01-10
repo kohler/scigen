@@ -253,6 +253,7 @@ sub autoformat	# ($text, %args)
 			else
 			{
     my $extraspace = length($line->{raw}) - length($line->{text}) - $firstfrom;
+    $extraspace = 0 if $extraspace < 0;
 				$paras[-1]->{text} .= "\n" . q{ }x$extraspace . $line->{text};
 				$paras[-1]->{raw} .= "\n" . $line->{raw};
 			}
@@ -439,7 +440,7 @@ sub autoformat	# ($text, %args)
 			         :                                     '['x$tlen
         		         );
 		    my $tryformat = "$format$tfield";
-		    $newtext = (!$para->{empty} ? "\n"x($args{gap}-$gap) : "") 
+		    $newtext = (!$para->{empty} && $args{gap} > $gap ? "\n"x($args{gap}-$gap) : "")
 		             . form( { squeeze=>$args{squeeze}, trim=>1,
 				       break=>$args{break},
 				       fill => !(!($args{expfill}
@@ -499,7 +500,7 @@ sub recase {
 	return $text;
 }
 
-my $alword = qr{(?:\pL|&[a-z]+;)(?:[\pL']|&[a-z]+;)*}i;
+my $alword = qr{(?<![\\\w])(?:\pL|&[a-z]+;)(?:[\pL']|&[a-z]+;)*}i;
 
 sub entitle {
 	my $ignore = pop;
@@ -539,10 +540,15 @@ my $brsent = 0;
 sub ensentence {
 	do { $eos = 1; return } unless @_;
 	my ($str, $trailer) = @_;
-	if ($str =~ /^([^a-z]*)I[^a-z]*?($term?)[^a-z]*$/i) {
+	my $pfx = "";
+	if ($str =~ /\A([\\@]\w+)(.*)\z/s) {
+		$pfx = $1;
+		$str = $2;
+	}
+	if ($str =~ /^([^a-z]*|\\\w+)I[^a-z]*?($term?)[^a-z]*$/i) {
 		$eos = $2;
 		$brsent = $1 =~ /^[[(]/;
-		return uc $str
+		return $pfx . uc $str;
 	}
         # modified by JS: Don't lc LaTeX stuff inside {}
 	unless ($str =~ /[a-z0-9].*[A-Z]|[A-Z].*[a-z0-9]/ or 
@@ -557,7 +563,7 @@ sub ensentence {
 	    && $str =~ /[a-z][^a-z]*$term([^a-z]*)\s/
 	    && !($1=~/[])]/ && !$brsent);
 	$str =~ s/\s+$/$trailer/ if $eos && $trailer;
-	return $str;
+	return $pfx . $str;
 }
 
 # blockquote($text,$para, $format, $tlen, \@hang, \%args);

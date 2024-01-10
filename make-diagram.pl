@@ -86,21 +86,19 @@ my %types = ("digraph" => "DIR_LAYOUT",
 my %edges = ("digraph" => "->",
 	     "graph" => "--" );
 
-my $dat = {};
-my $RE = undef;
-
 my $fh = new IO::File ("<graphviz.in");
-scigen::read_rules ($fh, $dat, \$RE, 0);
+my $scigen = scigen->new();
+$scigen->read_rules($fh, 0);
 
-my $num_nodes = scigen::generate ($dat, "NUM_NODES", $RE, 0, 0);
-my $graph_type = scigen::generate ($dat, "PICK_GRAPH_TYPE", $RE, 0, 0);
-my $label_type = scigen::generate ($dat, "PICK_LABEL_TYPE", $RE, 0, 0);
-my $shape_type = scigen::generate ($dat, "PICK_SHAPE_TYPE", $RE, 0, 0);
+my $num_nodes = $scigen->generate ("NUM_NODES");
+my $graph_type = $scigen->generate ("PICK_GRAPH_TYPE");
+my $label_type = $scigen->generate ("PICK_LABEL_TYPE");
+my $shape_type = $scigen->generate ("PICK_SHAPE_TYPE");
 my $edge_label_type = $edge_label_types[$label_type];
 $label_type = $label_types[$label_type];
 my $dir_rule = $types{$graph_type};
 my $edge_type = $edges{$graph_type};
-my $program = scigen::generate ($dat, $dir_rule, $RE, 0, 0);
+my $program = $scigen->generate ($dir_rule);
 
 #good number of edges: n-1 -> 2n-1
 my $num_edges = int rand($num_nodes-1);
@@ -111,33 +109,20 @@ if( $num_edges > 16 ) {
     $num_edges = 1;
 }
 
-my @a = ($graph_type);
-$dat->{"GRAPH_DIR"} = \@a;
-my @b = ($label_type);
-$dat->{"NODE_LABEL"} = \@b;
-my @c = ($edge_type);
-$dat->{"EDGEOP"} = \@c;
+$scigen->def("GRAPH_DIR", $graph_type);
+$scigen->def("NODE_LABEL", $label_type);
+$scigen->def("EDGEOP", $edge_type);
 # can't be in italics
-if( $sysname =~ /\{\\em (.*)\}/ ) {
+if( $sysname =~ /\\emph\{(.*)\}/ ) {
     $sysname = $1;
 }
-my @d = ($sysname); 
-$dat->{"SYSNAME"} = \@d;
-my @e = ();
-my @shapes = split( /\s+/, $shape_type );
-foreach my $s (@shapes) {
-    push @e, $s
-}
-$dat->{"SHAPE_TYPE"} = \@e;
-my @f = ($edge_label_type);
-$dat->{"EDGE_LABEL"} = \@f;
-my @g = ("NODES_$num_nodes");
-$dat->{"NODES"} = \@g;
-my @h = ("EDGES_$num_edges");
-$dat->{"EDGES"} = \@h;
+$scigen->def("SYSNAME", $sysname);
+$scigen->def("SHAPE_TYPE", split(/\s+/, $shape_type));
+$scigen->def("EDGE_LABEL", $edge_label_type);
+$scigen->def("NODES", "NODES_$num_nodes");
+$scigen->def("EDGES", "EDGES_$num_edges");
 
-scigen::compute_re( $dat, \$RE );
-my $graph_file = scigen::generate ($dat, "GRAPHVIZ", $RE, 0, 0);
+my $graph_file = $scigen->generate ("GRAPHVIZ");
 
 open( VIZ, ">$viz_file" ) or die( "Can't open $viz_file for writing" );
 print VIZ $graph_file;

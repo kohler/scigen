@@ -22,6 +22,7 @@ require "./scigen.pm";
 use IO::File;
 use Getopt::Long;
 use IO::Socket;
+use JSON;
 
 my $tmp_dir = "/tmp/scitmp.$$";
 my $tmp_pre = "$tmp_dir/scimakelatex.";
@@ -47,7 +48,7 @@ $0 [options]
                               multiple times)
     --seed <seed>             Seed the prng with this
     --file <file>             Save the PDF in this file
-    --tar  <file>             Tar all the files up
+    --tar <file>              Tar all the files up
     --savedir <dir>           Save the files in a directory; do not latex 
                               or dvips.  Must specify full path
     --remote                  Use a daemon to resolve symbols
@@ -64,8 +65,9 @@ EOUsage
 # Get the user-defined parameters.
 # First parse options
 my %options;
-&GetOptions( \%options, "help|?", "author=s@", "seed=s", "tar=s", "file=s", 
-	     "savedir=s", "remote", "talk", "title=s", "sysname=s" )
+&GetOptions( \%options, "help|?", "author=s@", "seed=s", "tar=s", "file=s",
+	"json=s",
+	"savedir=s", "remote", "talk", "title=s", "sysname=s" )
     or &usage;
 
 if( $options{"help"} ) {
@@ -87,10 +89,7 @@ if( defined $options{"seed"} ) {
 }
 srand($seed);
 
-my $name_dat = {};
-my $name_RE = undef;
-my $tex_dat = {};
-my $tex_RE = undef;
+my $name_dat = undef;
 
 if( !-d $tmp_dir ) {
     system( "mkdir -p $tmp_dir" ) and die( "Couldn't make $tmp_dir" );
@@ -112,10 +111,12 @@ if( defined $options{"talk"} ) {
     $tex_fh = new IO::File ("<scirules.in");
     $start_rule = "SCIPAPER_LATEX";
 }
-my @a = ($sysname);
-$tex_dat->{"SYSNAME"} = \@a;
+
+my $tex_dat = scigen->new();
+
+$tex_dat->add("SYSNAME", $sysname);
 # add in authors
-$tex_dat->{"AUTHOR_NAME"} = \@authors;
+$tex_dat->add("AUTHOR_NAME", @authors);
 my $s = "";
 for( my $i = 0; $i <= $#authors; $i++ ) {
     $s .= "AUTHOR_NAME";
@@ -125,15 +126,13 @@ for( my $i = 0; $i <= $#authors; $i++ ) {
 	$s .= " and ";
     }
 }
-my @b = ($s);
-$tex_dat->{"SCIAUTHORS"} = \@b;
+$tex_dat->add("SCIAUTHORS", $s);
 
-scigen::read_rules ($tex_fh, $tex_dat, \$tex_RE, 0);
+$tex_dat->read_rules ($tex_fh, 0);
 if( defined $title ) {
-    my @a = ($title);
-    $tex_dat->{"SCI_TITLE"} = \@a;
+	$tex_dat->def("SCI_TITLE", $title);
 }
-my $tex = scigen::generate ($tex_dat, $start_rule, $tex_RE, 0, 1);
+my $tex = $tex_dat->generate ($start_rule);
 open( TEX, ">$tex_file" ) or die( "Couldn't open $tex_file for writing" );
 print TEX $tex;
 close( TEX );
@@ -213,12 +212,9 @@ foreach my $author (@authors) {
 open( BIB, ">$bib_file" ) or die( "Couldn't open $bib_file for writing" );
 foreach my $clabel (keys(%citelabels)) {
     my $sysname_cite = &get_system_name();
-    @a = ($sysname_cite);
-    $tex_dat->{"SYSNAME"} = \@a;
-    my @b = ($clabel);
-    $tex_dat->{"CITE_LABEL_GIVEN"} = \@b;
-    scigen::compute_re( $tex_dat, \$tex_RE );
-    my $bib = scigen::generate ($tex_dat, "BIBTEX_ENTRY", $tex_RE, 0, 1);
+    $tex_dat->def("SYSNAME", $sysname_cite);
+    $tex_dat->def("CITE_LABEL_GIVEN", $clabel);
+    my $bib = $tex_dat->generate("BIBTEX_ENTRY");
     print BIB $bib;
     
 }
@@ -275,6 +271,18 @@ if( defined $options{"tar"} or defined $options{"savedir"} ) {
     print "$seedstring\n";
 }
 
+if (defined $options{"json"}) {
+	my ($title) = $tex_dat->expand("SCI_TITLE");
+	my ($abstract) = $tex_dat->expand("SCI_ABSTRACT");
+	my ($json) = JSON->new->utf8->pretty;
+	open(J, ">", $options{"json"}) or die;
+	print J $json->encode({
+		"title" => $title,
+		"abstract" => $abstract
+	});
+	close J;
+}
+
 
 system( "rm $tmp_pre*" ) and die( "Couldn't rm" );
 unlink( @figures );
@@ -287,18 +295,19 @@ sub get_system_name {
 	return &get_system_name_remote();
     }
 
-    if( !defined $name_RE ) {
-	my $fh = new IO::File ("<system_names.in");
-        scigen::read_rules ($fh, $name_dat, \$name_RE, 0);
+    if( !defined $name_dat ) {
+		my $fh = new IO::File ("<system_names.in");
+		$name_dat = scigen->new();
+		$name_dat->read_rules($fh, 0);
     }
 
-    my $name = scigen::generate ($name_dat, "SYSTEM_NAME", $name_RE, 0, 0);
+    my $name = $name_dat->generate ("SYSTEM_NAME");
     chomp($name);
 
     # how about some effects?
     my $rand = rand;
     if( $rand < .1 ) {
-	$name = "{\\em $name}";
+	$name = "\\emph{$name}";
     } elsif( length($name) <= 6 and $rand < .4 ) {
 	$name = uc($name);
     }
