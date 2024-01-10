@@ -18,7 +18,7 @@
 
 
 use strict;
-use scigen;
+require "./scigen.pm";
 use IO::File;
 use Getopt::Long;
 use IO::Socket;
@@ -27,8 +27,6 @@ my $tmp_dir = "/tmp/scitmp.$$";
 my $tmp_pre = "$tmp_dir/scimakelatex.";
 my $tex_prefix = "scimakelatex.$$";
 my $tex_file = "$tmp_pre$$.tex";
-my $dvi_file = "$tmp_pre$$.dvi";
-my $ps_file = "$tmp_pre$$.ps";
 my $pdf_file = "$tmp_pre$$.pdf";
 my $bib_file = "$tmp_dir/scigenbibfile.bib";
 my $class_files = "IEEEtran.cls IEEE.bst";
@@ -48,7 +46,7 @@ $0 [options]
     --author <quoted_name>    An author of the paper (can be specified 
                               multiple times)
     --seed <seed>             Seed the prng with this
-    --file <file>             Save the postscript in this file
+    --file <file>             Save the PDF in this file
     --tar  <file>             Tar all the files up
     --savedir <dir>           Save the files in a directory; do not latex 
                               or dvips.  Must specify full path
@@ -148,7 +146,7 @@ while( <TEX> ) {
 
     my $line = $_;
 
-    if( /figure=(figure.*),/ ) {
+    if( /\{(figure.*?pdf)\}/ ) {
 	my $figfile = "$tmp_dir/$1";
 	my $done = 0;
 	while( !$done ) {
@@ -163,7 +161,7 @@ while( <TEX> ) {
 	push @figures, $figfile;
     }
 
-    if( /[=\{](dia[^\,\}]*)[\,\}]/ ) {
+    if( /\{(dia.*?pdf)\}/ ) {
 	my $figfile = "$tmp_dir/$1";
 	my $done = 0;
 	while( !$done ) {
@@ -233,25 +231,14 @@ if( !defined $options{"savedir"} ) {
 	$land = "-t landscape";
     }
 
-    system( "cp $class_files $tmp_dir; cd $tmp_dir; latex $tex_prefix; bibtex $tex_prefix; latex $tex_prefix; latex $tex_prefix; rm $class_files; " . 
-	    "dvips $land -o $ps_file $dvi_file" )
+    $ENV{"TEXPICTS"} = "$tmp_dir:";
+    system( "cp $class_files $tmp_dir; cd $tmp_dir; pdflatex $tex_prefix; bibtex $tex_prefix; pdflatex $tex_prefix; pdflatex $tex_prefix; rm $class_files" )
 	and die( "Couldn't latex nothing." );
 
-    if( defined $options{"file"} ) {
-	my $f = $options{"file"};
-	if( defined $options{"talk"} ) {
-	    system( "ps2pdf $ps_file $pdf_file; cp $pdf_file $f" ) 
-		and die( "Couldn't ps2pdf/cp $pdf_file" );
-	} else {
-	    system( "cp $ps_file $f" ) and die( "Couldn't cp to $f" );
+	if (defined $options{"file"}) {
+		my $f = $options{"file"};
+		system("cp $pdf_file $f") and die("Couldn't cp to $f");
 	}
-    } elsif( defined $options{"talk"} ) {
-	system( "ps2pdf $ps_file $pdf_file; acroread $pdf_file" ) 
-	    and die( "Couldn't ps2pdf/acroread $ps_file" );
-    } else {
-	system( "gv $ps_file" ) and die( "Couldn't gv $ps_file" );
-    }
-
 }
 
 my $seedstring = "seed=$seed ";
@@ -321,8 +308,9 @@ sub get_system_name {
 
 sub get_system_name_remote {
 
+	my $port = $scigen::SCIGEND_PORT | $scigen::SCIGEND_PORT;
     my $sock = IO::Socket::INET->new( PeerAddr => "localhost", 
-				      PeerPort => $scigen::SCIGEND_PORT,
+				      PeerPort => $port,
 				      Proto => 'tcp' );
     
     my $name;

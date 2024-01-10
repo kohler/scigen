@@ -3468,9 +3468,9 @@ GRAPH_LOG+14
 GRAPH_ERRORS errorbars
 GRAPH_ERRORS+4
 
-GRAPH_CURVE_LABEL title 'NETWORK_TYPE'
-GRAPH_CURVE_LABEL title 'SCI_THING'
-GRAPH_CURVE_LABEL title 'EVAL_SYSTEM'
+GRAPH_CURVE_LABEL title "NETWORK_TYPE"
+GRAPH_CURVE_LABEL title "SCI_THING"
+GRAPH_CURVE_LABEL title "EVAL_SYSTEM"
 
 GNUPLOT {
 
@@ -3491,7 +3491,7 @@ LATEX_HEADER {
 LATEX_DOCCLASS
 LATEX_FONTCLASS
 LATEX_CITEPACK
-\usepackage{epsfig}
+\usepackage{graphicx}
 \usepackage[latin1]{inputenc}
 \begin{document}
 
@@ -3539,7 +3539,7 @@ LATEX_AUTHORS \author{SCIAUTHORS}
 LATEX_FIGURE {
 
 \begin{figure}[t]
-\centerline{\epsfig{figure=LATEX_FIG_FILENAME,width=3in}}
+\centerline{\includegraphics[width=3in]{LATEX_FIG_FILENAME}}
 \caption{\small{
 SCI_GRAPH_CAPTION
 }}
@@ -3548,7 +3548,7 @@ SCI_GRAPH_CAPTION
 
 }
 
-LATEX_FIG_FILENAME figureNEWFIGNUM+.eps
+LATEX_FIG_FILENAME figureNEWFIGNUM+.pdf
 NEWFIGNUM\+
 NEWFIGNUM\#
 
@@ -3560,7 +3560,7 @@ NEWFIGLABEL\#
 LATEX_DIAGRAM {
 
 \begin{figure}[t]
-\centerline{\epsfig{figure=LATEX_DIA_FILENAME}}
+\centerline{\includegraphics{LATEX_DIA_FILENAME}}
 \caption{\small{
 SCI_DIAGRAM_CAPTION
 }}
@@ -3569,7 +3569,7 @@ SCI_DIAGRAM_CAPTION
 
 }
 
-LATEX_DIA_FILENAME diaNEWDIANUM+.eps
+LATEX_DIA_FILENAME diaNEWDIANUM+.pdf
 NEWDIANUM\+
 NEWDIANUM\#
 

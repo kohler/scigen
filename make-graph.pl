@@ -18,7 +18,7 @@
 
 
 use strict;
-use scigen;
+require "./scigen.pm";
 use Getopt::Long;
 
 my $filename;
@@ -34,7 +34,7 @@ $0 [options]
 
     --help                    Display this help message
     --seed <seed>             Seed the prng with this
-    --file <file>             Save the postscript in this file
+    --file <file>             Save the PDF in this file
     --color                   Draw in color?
 
 EOUsage
@@ -105,9 +105,9 @@ my $error = 0;
 
 my $tmp_dir = "/tmp/scigengraph.";
 my $gpfile = "$tmp_dir$$.gnuplot";
-my $epsfile = "$tmp_dir$$.eps";
+my $pdffile = "$tmp_dir$$.pdf";
 if( defined $filename ) {
-    $epsfile = $filename;
+    $pdffile = $filename;
 }
 my $datafile = "$tmp_dir$$.dat";
 my @labels = ();
@@ -115,8 +115,8 @@ my $num_points = 10;
 
 open( GPFILE, ">$gpfile" ) or die( "Couldn't write to $gpfile" );
 
-print GPFILE "set terminal postscript eps $color 26\n";
-print GPFILE "set output \"$epsfile\"\n";
+print GPFILE "set terminal pdf $color font \"Helvetica,18\"\n";
+print GPFILE "set output \"$pdffile\"\n";
 
 foreach my $line (@graph_lines) {
 
@@ -242,10 +242,6 @@ for( my $i = 0; $i < $curves; $i++ ) {
 close( GPFILE );
 
 system( "gnuplot $gpfile" ) and clean() and die( "Couldn't gnuplot $gpfile" );
-if( !defined $filename ) {
-    system( "gv $epsfile" ) and clean() 
-	and die( "Couldn't gv $epsfile" ) and clean();
-}
 clean();
 
 sub clean {

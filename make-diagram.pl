@@ -18,13 +18,13 @@
 
 
 use strict;
-use scigen;
+require "./scigen.pm";
 use Getopt::Long;
 
 my $tmp_dir = "/tmp";
-my $tmp_pre = "/$tmp_dir/scimakediagram.$$";
+my $tmp_pre = "$tmp_dir/scimakediagram.$$";
 my $viz_file = "$tmp_pre.viz";
-my $eps_file = "$tmp_pre.eps";
+my $pdf_file = "$tmp_pre.pdf";
 
 my $sysname;
 my $filename;
@@ -73,7 +73,7 @@ if( defined $options{"seed"} ) {
 srand($seed);
 
 if( defined $filename ) {
-    $eps_file = $filename;
+    $pdf_file = $filename;
 }
 
 my @label_types = qw( NODE_LABEL_LET NODE_LABEL_PROG 
@@ -143,21 +143,7 @@ open( VIZ, ">$viz_file" ) or die( "Can't open $viz_file for writing" );
 print VIZ $graph_file;
 close( VIZ );
 
-system( "$program -Tps $viz_file > $eps_file.tmp; ps2epsi $eps_file.tmp $eps_file" ) and
+system( "$program -Tpdf -o $pdf_file $viz_file" ) and
     die( "Can't run $program on $viz_file" );
-
-if( `uname` =~ /Linux/ ) {
-    # fix bounding box of stupid linux's ps2epsi
-    my $bbline = `grep "BoundingBox" $eps_file.tmp | tail -1`;
-    chomp $bbline;
-    #print "Fixing box: $bbline\n";
-    system( "sed -e s/%%BoundingBox.*/\"$bbline\"/ -i $eps_file" );
-}
-
-
-if( !defined $filename ) {
-    system( "gv $eps_file" ) and
-	die( "Can't run $program on $viz_file" );
-}
 
 system( "rm -f $tmp_pre*" ) and die( "Couldn't rm" );

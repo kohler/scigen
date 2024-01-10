@@ -10,7 +10,8 @@ $VERSION = '1.12';
 require Exporter;
 
 # modified by JS: remove Text:: package
-use Reform qw( form tag break_at break_with break_wrap break_TeX );
+require "./Reform.pm";
+Reform->import(qw( form tag break_at break_with break_wrap break_TeX ));
 
 @ISA = qw(Exporter);
 @EXPORT = qw( autoformat );
@@ -521,8 +522,8 @@ sub entitle {
 	s/ ( [:;] \s+ ) ($alword) /$1 . recase($2,'title')/ex;
 }
 
+# modified by JS: add al. and Jr.
 my $abbrev = join '|', qw{
-        # modified by JS: add al. and Jr.
 	etc[.]	pp[.]	ph[.]?d[.]	U[.]S[.]  al. Jr.
 };
 
@@ -578,7 +579,8 @@ sub blockquote {
 ), "]\n";
 =cut
 	$para->{text} =~
-		/ \A(\s*)		# $1 - leading whitespace (quotation)
+		m{
+	   \A(\s*)		# $1 - leading whitespace (quotation)
 	   (["']|``)		# $2 - opening quotemark
 	   (.*)			# $3 - quotation
 	   (''|\2)		# $4 closing quotemark
@@ -587,9 +589,9 @@ sub blockquote {
 	   (--|-)		# $6 - attribution introducer
 	   (.*?$)		# $7 - attribution line 1
 	   ((\5.*?$)*)		# $8 - attributions lines 2-N
-	   \s*\Z
-	 /xsm
-	 or return;
+	   \s*\z
+	 }xsm
+	 or return 0;
 
 	#print "[$1][$2][$3][$4][$5][$6][$7]\n";
 	my $indent = length $1;
@@ -600,18 +602,25 @@ sub blockquote {
 	my $attrib = $7.$8;
 	$text =~ s/\n/ /g;
 
-	$_[0] .= 
+	$para->{text} = form(
+	    {
+	        squeeze => $args->{squeeze},
+	        trim => 1,
+	        fill => $args->{expfill}
+	    },
+	    $format . q{ }x$indent . q{<}x$tlen,
+	    @$hang,
+	    $text,
+	    $format . q{ }x($qindent) . q{[}x($tlen-$qindent),
+	    @$hang,
+	    $text,
+	    { squeeze => 0 },
+	    $format . q{ } x $aindent . q{>> } . q{[}x($tlen - $aindent - 3),
+	    @$hang,
+	    $attribintro,
+	    $attrib
+	);
 
-				form {squeeze=>$args->{squeeze}, trim=>1,
-          fill => $args->{expfill}
-			       },
-	   $format . q{ }x$indent . q{<}x$tlen,
-             @$hang, $text,
-	   $format . q{ }x($qindent) . q{[}x($tlen-$qindent), 
-             @$hang, $text,
-	   {squeeze=>0},
-	   $format . q{ } x $aindent . q{>> } . q{[}x($tlen-$aindent-3),
-             @$hang, $attribintro, $attrib;
 	return 1;
 }
 
