@@ -3807,3 +3807,13 @@ LATEX_DOCCLASS {
 LATEX_FONTCLASS \usepackage{times}
 LATEX_BIBSTYLE \bibliographystyle{acm}
 LATEX_FONTSIZE 10pt
+
+[usenix]
+LATEX_DOCCLASS {
+\documentclass[letterpaper,twocolumn,10pt]{article}
+\usepackage{usenix-2020-09}
+\usepackage{amsmath}
+}
+LATEX_FONTCLASS
+LATEX_BIBSTYLE \bibliographystyle{plain}
+LATEX_CITEPACK

@@ -34,7 +34,7 @@ my $tmp_pre = "$tmp_dir/$tex_prefix";
 my $tex_file = "$tmp_pre.tex";
 my $pdf_file = "$tmp_pre.pdf";
 my $bib_file = "$tmp_dir/scigenbibfile.bib";
-my $class_files = "IEEEtran.cls IEEE.bst";
+my $class_files = "IEEEtran.cls IEEE.bst usenix-2020-09.sty";
 my $figure_tries = 5;
 my $have_neato = `which neato 2>/dev/null` ne "";
 my @authors;
@@ -54,7 +54,7 @@ $0 [options]
     --author <quoted_name>    An author of the paper (can be specified 
                               multiple times)
     --seed <seed>             Seed the prng with this
-    --file <file>             Save the PDF here; the default is
+    -o, --file <file>         Save the PDF here; the default is
                               ./scigen-<seed>.pdf in the current directory
     --json <file>             Save the title and abstract here as JSON
     --tar <file>              Tar all the files up
@@ -76,7 +76,7 @@ EOUsage
 # Get the user-defined parameters.
 # First parse options
 my %options;
-&GetOptions( \%options, "help|?", "author=s@", "seed=s", "tar=s", "file=s",
+&GetOptions( \%options, "help|?", "author=s@", "seed=s", "tar=s", "file|o|output=s",
 	"json=s", "enable=s@",
 	"savedir=s", "remote", "talk", "long", "title=s", "sysname=s" )
     or &usage;
