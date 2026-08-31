@@ -23,18 +23,25 @@ use IO::File;
 use Getopt::Long;
 use IO::Socket;
 use JSON;
+use File::Temp qw(tempdir);
+use File::Copy qw(move);
 
-my $tmp_dir = "/tmp/scitmp.$$";
-my $tmp_pre = "$tmp_dir/scimakelatex.";
+# Every intermediate file we or our helper scripts create goes in here,
+# and the whole directory is removed when we exit.
+my $tmp_dir = tempdir( "scigen.XXXXXXXX", TMPDIR => 1, CLEANUP => 1 );
 my $tex_prefix = "scimakelatex.$$";
-my $tex_file = "$tmp_pre$$.tex";
-my $pdf_file = "$tmp_pre$$.pdf";
+my $tmp_pre = "$tmp_dir/$tex_prefix";
+my $tex_file = "$tmp_pre.tex";
+my $pdf_file = "$tmp_pre.pdf";
 my $bib_file = "$tmp_dir/scigenbibfile.bib";
 my $class_files = "IEEEtran.cls IEEE.bst";
+my $figure_tries = 5;
+my $have_neato = `which neato 2>/dev/null` ne "";
 my @authors;
 my $seed;
 my $remote = 0;
 my $title;
+my $out_file;
 
 sub usage {
     select(STDERR);
@@ -47,7 +54,9 @@ $0 [options]
     --author <quoted_name>    An author of the paper (can be specified 
                               multiple times)
     --seed <seed>             Seed the prng with this
-    --file <file>             Save the PDF in this file
+    --file <file>             Save the PDF here; the default is
+                              ./scigen-<seed>.pdf in the current directory
+    --json <file>             Save the title and abstract here as JSON
     --tar <file>              Tar all the files up
     --savedir <dir>           Save the files in a directory; do not latex 
                               or dvips.  Must specify full path
@@ -55,6 +64,7 @@ $0 [options]
     --talk                    Make a talk, instead of a paper
     --title <title>           Set the title (useful for talks)
     --sysname <name>          Set the system name
+    --enable <section>
 
 EOUsage
 
@@ -66,7 +76,7 @@ EOUsage
 # First parse options
 my %options;
 &GetOptions( \%options, "help|?", "author=s@", "seed=s", "tar=s", "file=s",
-	"json=s",
+	"json=s", "enable=s@",
 	"savedir=s", "remote", "talk", "title=s", "sysname=s" )
     or &usage;
 
@@ -89,11 +99,16 @@ if( defined $options{"seed"} ) {
 }
 srand($seed);
 
-my $name_dat = undef;
-
-if( !-d $tmp_dir ) {
-    system( "mkdir -p $tmp_dir" ) and die( "Couldn't make $tmp_dir" );
+if( defined $options{"savedir"} ) {
+    # --savedir saves the LaTeX source and skips the PDF entirely
+} elsif( defined $options{"file"} ) {
+    $out_file = $options{"file"};
+} else {
+    # by default the paper lands in the current directory
+    $out_file = "scigen-$seed.pdf";
 }
+
+my $name_dat = undef;
 
 my $sysname;
 if( defined $options{"sysname"} ) {
@@ -101,6 +116,8 @@ if( defined $options{"sysname"} ) {
 } else {
     $sysname = &get_system_name();
 }
+
+my $enablearg = join "", map { " --enable \"$_\"" } @{$options{"enable"} || []};
 
 my $tex_fh; 
 my $start_rule;
@@ -113,10 +130,10 @@ if( defined $options{"talk"} ) {
 }
 
 my $tex_dat = scigen->new();
-
-$tex_dat->add("SYSNAME", $sysname);
+$tex_dat->enable(@{$options{"enable"} || []});
+$tex_dat->def("SYSNAME", $sysname);
 # add in authors
-$tex_dat->add("AUTHOR_NAME", @authors);
+$tex_dat->def("AUTHOR_NAME", @authors);
 my $s = "";
 for( my $i = 0; $i <= $#authors; $i++ ) {
     $s .= "AUTHOR_NAME";
@@ -126,7 +143,7 @@ for( my $i = 0; $i <= $#authors; $i++ ) {
 	$s .= " and ";
     }
 }
-$tex_dat->add("SCIAUTHORS", $s);
+$tex_dat->def("SCIAUTHORS", $s);
 
 $tex_dat->read_rules ($tex_fh, 0);
 if( defined $title ) {
@@ -147,46 +164,30 @@ while( <TEX> ) {
 
     if( /\{(figure.*?pdf)\}/ ) {
 	my $figfile = "$tmp_dir/$1";
-	my $done = 0;
-	while( !$done ) {
-	    my $newseed = int rand 0xffffffff;
-	    my $color = "";
-	    if( defined $options{"talk"} ) {
-		$color = "--color"
-	    }
-	    system( "./make-graph.pl --file $figfile --seed $newseed $color" ) 
-		or $done=1;
-	}
+	my $color = defined $options{"talk"} ? " --color" : "";
+	&make_figure( $figfile, sub {
+	    "./make-graph.pl --file \"$figfile\" --seed $_[0] " .
+		"--tmpdir \"$tmp_dir\"$color$enablearg" } );
 	push @figures, $figfile;
     }
 
     if( /\{(dia.*?pdf)\}/ ) {
 	my $figfile = "$tmp_dir/$1";
-	my $done = 0;
-	while( !$done ) {
-	    my $newseed = int rand 0xffffffff;
-	    if( `which neato` ) {
-		(system( "./make-diagram.pl --sys \"$sysname\" " . 
-			 "--file $figfile --seed $newseed" ) or 
-		 !(-f $figfile)) 
-		    or $done=1;
-	    } else {
-		system( "./make-graph.pl --file $figfile --seed $newseed" ) 
-		    or $done=1;
-	    }
-	}
+	&make_figure( $figfile, sub {
+	    $have_neato
+		? "./make-diagram.pl --sys \"$sysname\" --file \"$figfile\" " .
+		  "--seed $_[0] --tmpdir \"$tmp_dir\"$enablearg"
+		: "./make-graph.pl --file \"$figfile\" --seed $_[0] " .
+		  "--tmpdir \"$tmp_dir\"$enablearg" } );
 	push @figures, $figfile;
     }
 
     if( /[=\{]([^\{]*)-(talkfig[^\,\}]*)[\,\}]/) {
 	my $figfile = "$tmp_dir/$1-$2";
 	my $type = $1;
-	my $done = 0;
-	while( !$done ) {
-	    my $newseed = int rand 0xffffffff;
-	    system( "./make-talk-figure.pl --file $figfile --seed $newseed --type $type" ) 
-		or $done=1;
-	}
+	&make_figure( $figfile, sub {
+	    "./make-talk-figure.pl --file \"$figfile\" --seed $_[0] " .
+		"--type $type --tmpdir \"$tmp_dir\"$enablearg" } );
 	push @figures, $figfile;
     }
 
@@ -206,7 +207,7 @@ close( TEX );
 # generate bibtex 
 foreach my $author (@authors) {
     for( my $i = 0; $i < 10; $i++ ) {
-	push @{$tex_dat->{"SCI_SOURCE"}}, $author;
+	push @{$tex_dat->{rules}->{"SCI_SOURCE"}}, $author;
     }
 }
 open( BIB, ">$bib_file" ) or die( "Couldn't open $bib_file for writing" );
@@ -222,19 +223,12 @@ close( BIB );
 
 if( !defined $options{"savedir"} ) {
 
-    my $land = "";
-    if( defined $options{"talk"} ) {
-	$land = "-t landscape";
-    }
-
     $ENV{"TEXPICTS"} = "$tmp_dir:";
-    system( "cp $class_files $tmp_dir; cd $tmp_dir; pdflatex $tex_prefix; bibtex $tex_prefix; pdflatex $tex_prefix; pdflatex $tex_prefix; rm $class_files" )
+    system( "cp $class_files \"$tmp_dir\"; cd \"$tmp_dir\"; pdflatex -interaction=nonstopmode $tex_prefix; bibtex $tex_prefix; pdflatex -interaction=nonstopmode $tex_prefix; pdflatex -interaction=nonstopmode $tex_prefix; rm $class_files" )
 	and die( "Couldn't latex nothing." );
 
-	if (defined $options{"file"}) {
-		my $f = $options{"file"};
-		system("cp $pdf_file $f") and die("Couldn't cp to $f");
-	}
+    move( $pdf_file, $out_file )
+	or die( "Couldn't write $out_file: $!" );
 }
 
 my $seedstring = "seed=$seed ";
@@ -248,7 +242,7 @@ if( defined $options{"tar"} or defined $options{"savedir"} ) {
     my $all_files = "$tex_file $class_files @figures $bib_file";
     system( "mkdir $tartmp; cp $all_files $tartmp/;" ) and 
 	die( "Couldn't mkdir $tartmp" );
-    $all_files =~ s/$tmp_dir\///g;
+    $all_files =~ s/\Q$tmp_dir\E\///g;
     system( "echo $seedstring > $tartmp/seed.txt" ) and 
 	die( "Couldn't cat to $tartmp/seed.txt" );
     $all_files .= " seed.txt";
@@ -284,10 +278,26 @@ if (defined $options{"json"}) {
 }
 
 
-system( "rm $tmp_pre*" ) and die( "Couldn't rm" );
-unlink( @figures );
-unlink( "$bib_file" );
-system( "rm -f $tmp_dir/dia*.tmp; rmdir $tmp_dir" );
+if( defined $out_file ) {
+    print "wrote $out_file\n";
+}
+
+# $tmp_dir, and everything our helpers left in it, goes away here
+
+sub make_figure {
+    my ($file, $make_cmd) = @_;
+    my $cmd;
+
+    for( my $try = 0; $try < $figure_tries; $try++ ) {
+	$cmd = &$make_cmd( int rand 0xffffffff );
+	return if system( $cmd ) == 0 and -f $file;
+	unlink( $file );
+    }
+
+    die( "Couldn't create $file in $figure_tries attempts.\n" .
+	 "The last command tried was:\n  $cmd\n" .
+	 "Graphs need gnuplot; diagrams also use graphviz's neato.\n" );
+}
 
 sub get_system_name {
 
@@ -298,6 +308,7 @@ sub get_system_name {
     if( !defined $name_dat ) {
 		my $fh = new IO::File ("<system_names.in");
 		$name_dat = scigen->new();
+        $name_dat->enable(@{$options{"enable"} || []});
 		$name_dat->read_rules($fh, 0);
     }
 

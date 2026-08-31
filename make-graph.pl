@@ -24,6 +24,7 @@ use Getopt::Long;
 my $filename;
 my $seed;
 my $color = "";
+my $tmp_dir = "/tmp";
 
 sub usage {
     select(STDERR);
@@ -36,6 +37,8 @@ $0 [options]
     --seed <seed>             Seed the prng with this
     --file <file>             Save the PDF in this file
     --color                   Draw in color?
+    --tmpdir <dir>            Put intermediate files here (default /tmp)
+    --enable <section>
 
 EOUsage
 
@@ -46,7 +49,7 @@ EOUsage
 # Get the user-defined parameters.
 # First parse options
 my %options;
-&GetOptions( \%options, "help|?", "seed=s", "file=s", "color" )
+&GetOptions( \%options, "help|?", "seed=s", "file=s", "color", "tmpdir=s", "enable=s@" )
     or &usage;
 
 if( $options{"help"} ) {
@@ -57,6 +60,9 @@ if( $options{"color"} ) {
 }
 if( defined $options{"file"} ) {
     $filename = $options{"file"};
+}
+if( defined $options{"tmpdir"} ) {
+    $tmp_dir = $options{"tmpdir"};
 }
 if( defined $options{"seed"} ) {
     $seed = $options{"seed"};
@@ -90,6 +96,7 @@ sub add_noise {
 
 my $fh = new IO::File ("<scirules.in");
 my $scigen = scigen->new();
+$scigen->enable(@{$options{"enable"} || []});
 $scigen->read_rules ($fh, 0);
 
 my $graph = $scigen->generate ("GNUPLOT");
@@ -102,13 +109,13 @@ my $type;
 my $curves;
 my $error = 0;
 
-my $tmp_dir = "/tmp/scigengraph.";
-my $gpfile = "$tmp_dir$$.gnuplot";
-my $pdffile = "$tmp_dir$$.pdf";
+my $tmp_pre = "$tmp_dir/scigengraph.$$";
+my $gpfile = "$tmp_pre.gnuplot";
+my $pdffile = "$tmp_pre.pdf";
 if( defined $filename ) {
     $pdffile = $filename;
 }
-my $datafile = "$tmp_dir$$.dat";
+my $datafile = "$tmp_pre.dat";
 my @labels = ();
 my $num_points = 10;
 
@@ -191,7 +198,7 @@ for( my $i = 0; $i < $curves; $i++ ) {
 	#my $func = `perl scigen.pl -f functions.in -s EXPR -p 0`;
 	
 	open( DAT, ">$datafile.$i" ) or 
-	    clean() and die( "Couldn't write to $datafile.$i" );
+	    (clean(), die( "Couldn't write to $datafile.$i" ));
 	
 	foreach my $x (@x) {
 	    
@@ -239,9 +246,13 @@ for( my $i = 0; $i < $curves; $i++ ) {
 
 close( GPFILE );
 
-system( "gnuplot $gpfile" ) and clean() and die( "Couldn't gnuplot $gpfile" );
+if( system( "gnuplot", $gpfile ) != 0 ) {
+    clean();
+    die( "Couldn't gnuplot $gpfile" );
+}
 clean();
 
+# remove our intermediate files, but not the graph we were asked for
 sub clean {
-    system( "rm $tmp_dir$$*" ) and die( "Couldn't rm anything" );
+    unlink( $gpfile, glob( "$datafile.*" ) );
 }

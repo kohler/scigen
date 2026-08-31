@@ -22,11 +22,6 @@ use scigen;
 use Getopt::Long;
 
 my $tmp_dir = "/tmp";
-my $tmp_pre = "/$tmp_dir/scimaketalkfig.$$";
-my $svg_file = "$tmp_pre.svg";
-my $eps_file = "$tmp_pre.eps";
-my $ps_file = "$tmp_pre.ps";
-my $png_file = "$tmp_pre.png";
 
 my %types = qw( network NETWORK_DIAGRAM
 		anything ANYTHING_DIAGRAM
@@ -48,6 +43,7 @@ $0 [options]
     --file <file>             Save the postscript in this file
     --sysname <file>          What is the system called?
     --type <type>             What type of figure?
+    --tmpdir <dir>            Put intermediate files here (default /tmp)
 
 EOUsage
 
@@ -58,7 +54,8 @@ EOUsage
 # Get the user-defined parameters.
 # First parse options
 my %options;
-&GetOptions( \%options, "help|?", "seed=s", "file=s", "sysname=s", "type=s" )
+&GetOptions( \%options, "help|?", "seed=s", "file=s", "sysname=s", "type=s",
+	     "tmpdir=s" )
     or &usage;
 
 if( $options{"help"} ) {
@@ -77,9 +74,15 @@ if( defined $options{"seed"} ) {
 }
 srand($seed);
 
-if( defined $filename ) {
-    $eps_file = $filename;
+if( defined $options{"tmpdir"} ) {
+    $tmp_dir = $options{"tmpdir"};
 }
+
+my $tmp_pre = "$tmp_dir/scimaketalkfig.$$";
+my $svg_file = "$tmp_pre.svg";
+my $ps_file = "$tmp_pre.ps";
+my $png_file = "$tmp_pre.png";
+my $eps_file = defined $filename ? $filename : "$tmp_pre.eps";
 
 my $dat = {};
 my $RE = undef;
@@ -180,4 +183,5 @@ if( !defined $filename ) {
     system( "cp $eps_file $filename" );
 }
 
-system( "rm -f $tmp_pre*" ) and die( "Couldn't rm" );
+# remove our intermediate files, but not the figure we were asked for
+unlink( $svg_file, $ps_file, $png_file );

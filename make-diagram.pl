@@ -22,9 +22,6 @@ require "./scigen.pm";
 use Getopt::Long;
 
 my $tmp_dir = "/tmp";
-my $tmp_pre = "$tmp_dir/scimakediagram.$$";
-my $viz_file = "$tmp_pre.viz";
-my $pdf_file = "$tmp_pre.pdf";
 
 my $sysname;
 my $filename;
@@ -39,8 +36,10 @@ $0 [options]
 
     --help                    Display this help message
     --seed <seed>             Seed the prng with this
-    --file <file>             Save the postscript in this file
+    --file <file>             Save the PDF in this file
     --sysname <file>          What is the system called?
+    --tmpdir <dir>            Put intermediate files here (default /tmp)
+    --enable <section>
 
 EOUsage
 
@@ -51,7 +50,8 @@ EOUsage
 # Get the user-defined parameters.
 # First parse options
 my %options;
-&GetOptions( \%options, "help|?", "seed=s", "file=s", "sysname=s" )
+&GetOptions( \%options, "help|?", "seed=s", "file=s", "sysname=s",
+	     "tmpdir=s", "enable=s@" )
     or &usage;
 
 if( $options{"help"} ) {
@@ -72,9 +72,13 @@ if( defined $options{"seed"} ) {
 }
 srand($seed);
 
-if( defined $filename ) {
-    $pdf_file = $filename;
+if( defined $options{"tmpdir"} ) {
+    $tmp_dir = $options{"tmpdir"};
 }
+
+my $tmp_pre = "$tmp_dir/scimakediagram.$$";
+my $viz_file = "$tmp_pre.viz";
+my $pdf_file = defined $filename ? $filename : "$tmp_pre.pdf";
 
 my @label_types = qw( NODE_LABEL_LET NODE_LABEL_PROG 
 		      NODE_LABEL_NET NODE_LABEL_IP NODE_LABEL_HW 
@@ -88,6 +92,7 @@ my %edges = ("digraph" => "->",
 
 my $fh = new IO::File ("<graphviz.in");
 my $scigen = scigen->new();
+$scigen->enable(@{$options{"enable"} || []});
 $scigen->read_rules($fh, 0);
 
 my $num_nodes = $scigen->generate ("NUM_NODES");
@@ -128,7 +133,8 @@ open( VIZ, ">$viz_file" ) or die( "Can't open $viz_file for writing" );
 print VIZ $graph_file;
 close( VIZ );
 
-system( "$program -Tpdf -o $pdf_file $viz_file" ) and
-    die( "Can't run $program on $viz_file" );
+system( $program, "-Tpdf", "-o", $pdf_file, $viz_file ) == 0
+    or die( "Can't run $program on $viz_file" );
 
-system( "rm -f $tmp_pre*" ) and die( "Couldn't rm" );
+# remove our intermediate file, but not the diagram we were asked for
+unlink( $viz_file );

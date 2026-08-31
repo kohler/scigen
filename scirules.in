@@ -3798,3 +3798,12 @@ BIBTEX_ENTRY {
   year = CITE_YEAR}
 
 }
+
+[basic10]
+LATEX_DOCCLASS {
+\documentclass[LATEX_FONTSIZE,twocolumn]{article}
+\usepackage[hmargin=0.75in,tmargin=1in,bmargin=1.5in,columnsep=0.333in]{geometry}
+}
+LATEX_FONTCLASS \usepackage{times}
+LATEX_BIBSTYLE \bibliographystyle{acm}
+LATEX_FONTSIZE 10pt
