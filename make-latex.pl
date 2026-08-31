@@ -62,6 +62,7 @@ $0 [options]
                               or dvips.  Must specify full path
     --remote                  Use a daemon to resolve symbols
     --talk                    Make a talk, instead of a paper
+    --long                    Make a long (10-page) paper, with subsections
     --title <title>           Set the title (useful for talks)
     --sysname <name>          Set the system name
     --enable <section>
@@ -77,7 +78,7 @@ EOUsage
 my %options;
 &GetOptions( \%options, "help|?", "author=s@", "seed=s", "tar=s", "file=s",
 	"json=s", "enable=s@",
-	"savedir=s", "remote", "talk", "title=s", "sysname=s" )
+	"savedir=s", "remote", "talk", "long", "title=s", "sysname=s" )
     or &usage;
 
 if( $options{"help"} ) {
@@ -124,6 +125,9 @@ my $start_rule;
 if( defined $options{"talk"} ) {
     $tex_fh = new IO::File ("<talkrules.in");
     $start_rule = "SCITALK_LATEX";
+} elsif( defined $options{"long"} ) {
+    $tex_fh = new IO::File ("<scilongrules.in");
+    $start_rule = "SCILONGPAPER_LATEX";
 } else {
     $tex_fh = new IO::File ("<scirules.in");
     $start_rule = "SCIPAPER_LATEX";

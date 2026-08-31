@@ -1,0 +1,1097 @@
+#
+# Rules for long-form (10-page) SCIgen papers.
+#
+# This file layers a longer, subsectioned paper structure on top of the
+# vocabulary in scirules.in.  It defines no new words: every noun, verb and
+# buzzword comes from the included file, so the two rulesets stay in sync.
+# The start rule is SCILONGPAPER_LATEX.
+#
+
+#    This file is part of SCIgen.
+#
+#    SCIgen is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    SCIgen is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with SCIgen; if not, write to the Free Software
+#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+.include scirules.in
+
+#############################################################################
+######## The paper ########
+#############################################################################
+
+SCILONGPAPER_LATEX {
+
+ LATEX_HEADER
+
+ SCI_ABSTRACT_HEADER
+ SCI_ABSTRACT
+
+ LONG_INTRO
+
+ LONG_BACK
+
+ LONG_RELWORK
+
+ LONG_DESIGN
+
+ LONG_IMPL
+
+ LONG_EVAL
+
+ LONG_DISC
+
+ LONG_FUTURE
+
+ SCI_CONCL
+
+ LATEX_FOOTER
+
+}
+
+SCILONGPAPER_LATEX {
+
+ LATEX_HEADER
+
+ SCI_ABSTRACT_HEADER
+ SCI_ABSTRACT
+
+ LONG_INTRO
+
+ LONG_RELWORK
+
+ LONG_BACK
+
+ LONG_DESIGN
+
+ LONG_IMPL
+
+ LONG_EVAL
+
+ LONG_DISC
+
+ LONG_FUTURE
+
+ SCI_CONCL
+
+ LATEX_FOOTER
+
+}
+
+SCILONGPAPER_LATEX {
+
+ LATEX_HEADER
+
+ SCI_ABSTRACT_HEADER
+ SCI_ABSTRACT
+
+ LONG_INTRO
+
+ LONG_BACK
+
+ LONG_DESIGN
+
+ LONG_IMPL
+
+ LONG_EVAL
+
+ LONG_RELWORK
+
+ LONG_DISC
+
+ LONG_FUTURE
+
+ SCI_CONCL
+
+ LATEX_FOOTER
+
+}
+
+# Sentence terminator for this file: mostly a period, sometimes a citation
+# or a piece of filler, exactly like XXX in scirules.in.
+LONG_XXX	XXX
+LONG_XXX  . FILLER_SENTENCE.
+LONG_XXX  . FILLER_SENTENCE. FILLER_SENTENCE.
+LONG_XXX  . FILLER_SENTENCE. FILLER_SENTENCE LONG_XXX
+
+#############################################################################
+######## Introduction ########
+#############################################################################
+
+LONG_INTRO {
+
+ SCI_INTRO_HEADER
+
+ SCI_INTRO_PARAGRAPH_A
+
+ LONG_INTRO_MOTIVE_PAR
+
+ SCI_INTRO_PARAGRAPH_THESIS
+
+ LONG_INTRO_APPROACH_PAR
+
+ SCI_INTRO_PARAGRAPH_CONTR
+
+ LONG_INTRO_CONTRIB_LTX
+
+ LONG_INTRO_ROADMAP_PAR
+
+}
+
+LONG_INTRO {
+
+ SCI_INTRO_HEADER
+
+ SCI_INTRO_PARAGRAPH_A
+
+ SCI_INTRO_PARAGRAPH_GENERIC
+
+ LONG_INTRO_MOTIVE_PAR
+
+ SCI_INTRO_PARAGRAPH_THESIS
+
+ LONG_INTRO_APPROACH_PAR
+
+ LONG_INTRO_OBSTACLE_PAR
+
+ LONG_INTRO_CONTRIB_LTX
+
+ LONG_INTRO_ROADMAP_PAR
+
+}
+
+LONG_INTRO_MOTIVE_PAR	LONG_INTRO_MOTIVE_1 LONG_MID_RUN LONG_INTRO_MOTIVE_2
+LONG_INTRO_MOTIVE_1	the SCI_ACT is an SCI_ADJ SCI_PROBLEM LONG_XXX
+LONG_INTRO_MOTIVE_1	many SCI_PEOPLE would agree that, had it not been for SCI_GENERIC_NOUN, the SCI_ACT might never have occurred LONG_XXX
+LONG_INTRO_MOTIVE_1	the SCI_ACT has been widely studied, but its interaction with SCI_GENERIC_NOUN remains poorly understood LONG_XXX
+LONG_INTRO_MOTIVE_1	to what extent can SCI_THING_MOD be SCI_VERBED without recourse to SCI_GENERIC_NOUN LONG_XXX
+LONG_INTRO_MOTIVE_1	the SCI_ACT would SCI_ADJ_ADV degrade SCI_GENERIC_NOUN if it were not for SCI_THING_MOD LONG_XXX
+LONG_INTRO_MOTIVE_1	SCI_PEOPLE have long held that the SCI_ACT is impossible; we take the opposite view LONG_XXX
+LONG_INTRO_MOTIVE_1	in the last decade, the SCI_ACT has received considerable attention from SCI_PEOPLE LONG_XXX
+LONG_INTRO_MOTIVE_1	the SCI_ACT is not the only SCI_PROBLEM here, but it is by far the most SCI_ADJ one LONG_XXX
+
+LONG_INTRO_MOTIVE_2	clearly, SCI_GENERIC_NOUN and SCI_GENERIC_NOUN are the two remaining obstacles to the SCI_ACT LONG_XXX
+LONG_INTRO_MOTIVE_2	the SCI_ACT, LIT_CONCLUSION, is the natural place to begin LONG_XXX
+LONG_INTRO_MOTIVE_2	we view SCI_FIELD as following a cycle of four phases: SCI_VERBION, SCI_VERBION, SCI_VERBION, and SCI_VERBION LONG_XXX
+LONG_INTRO_MOTIVE_2	such a claim at first glance seems SCI_ADJ_ADV counterintuitive, but is derived entirely from known results LONG_XXX
+LONG_INTRO_MOTIVE_2	unfortunately, this SCI_APPROACH is entirely adequate for SCI_GENERIC_NOUN alone LONG_XXX
+
+LONG_INTRO_APPROACH_PAR	LONG_INTRO_APPROACH_1 LONG_MID_RUN LONG_INTRO_APPROACH_2
+LONG_INTRO_APPROACH_1	SCI_IN_THIS_PAPER we SCI_PRESENT_VERB SCI_OUR_SYSTEM, SCI_OVERALL_THESIS_THING, which we use to SCI_SOLVE_CLAUSE LONG_XXX
+LONG_INTRO_APPROACH_1	our SCI_APPROACH to the SCI_ACT is SCI_ADJ_ADV different from RELATED SCI_SYSTEM_PL CITATION_SOMETIMES.
+LONG_INTRO_APPROACH_1	SCI_OUR_SYSTEM turns the SCI_BUZZWORD_ADJ SCI_BUZZWORD_NOUN sledgehammer into a scalpel LONG_XXX
+LONG_INTRO_APPROACH_1	we SCI_PRESENT_VERB SCI_OUR_SYSTEM, a SCI_ADJ SCI_SYSTEM for SCI_VERBING SCI_GENERIC_NOUN LONG_XXX
+LONG_INTRO_APPROACH_1	the SCI_APPROACH we take in this work is SCI_ADJ_ADV simple: we SCI_VERB SCI_GENERIC_NOUN and let SCI_GENERIC_NOUN do the rest LONG_XXX
+
+LONG_INTRO_APPROACH_2	we SCI_ASSUME throughout that SCI_OVERALL_THESIS_PROVE LONG_XXX
+LONG_INTRO_APPROACH_2	the rest of the design follows from this single observation LONG_XXX
+LONG_INTRO_APPROACH_2	no prior SCI_SYSTEM known to us makes this trade-off explicit LONG_XXX
+LONG_INTRO_APPROACH_2	our SCI_APPROACH is orthogonal to RELATED work in SCI_FIELD, and we consider the two complementary LONG_XXX
+
+LONG_INTRO_OBSTACLE_PAR	LONG_INTRO_OBSTACLE_1 LONG_MID_RUN LONG_INTRO_OBSTACLE_2
+LONG_INTRO_OBSTACLE_1	two SCI_ADJ obstacles stand in the way of the SCI_ACT LONG_XXX
+LONG_INTRO_OBSTACLE_1	SCI_ADJ_ADV, the SCI_ACT is complicated by SCI_GENERIC_NOUN LONG_XXX
+LONG_INTRO_OBSTACLE_1	the SCI_PROBLEM with existing SCI_SYSTEM_PL is that they cannot SCI_SYS_VERB SCI_GENERIC_NOUN CITATION_SOMETIMES.
+LONG_INTRO_OBSTACLE_1	SCI_ADJ as it is, the SCI_ACT is hardly a solved SCI_PROBLEM LONG_XXX
+
+LONG_INTRO_OBSTACLE_2	we address each of these in turn LONG_XXX
+LONG_INTRO_OBSTACLE_2	SCI_OUR_SYSTEM sidesteps both LONG_XXX
+LONG_INTRO_OBSTACLE_2	neither obstacle is fundamental, as we will show LONG_XXX
+LONG_INTRO_OBSTACLE_2	we leave the second of these for the moment and return to it later LONG_XXX
+
+LONG_INTRO_CONTRIB_LTX {
+
+LONG_INTRO_CONTRIB_LEADIN_PAR
+
+\begin{itemize}
+\item LONG_CONTRIB_FIRST_PAR
+\item LONG_CONTRIB_ITEM_PAR
+\item LONG_CONTRIB_ITEM_PAR
+\end{itemize}
+
+}
+
+LONG_INTRO_CONTRIB_LEADIN_PAR	the roadmap of our contributions is as follows LONG_XXX
+LONG_INTRO_CONTRIB_LEADIN_PAR	we make three SCI_ADJ contributions in this work LONG_XXX
+LONG_INTRO_CONTRIB_LEADIN_PAR	the contributions of this work are threefold LONG_XXX
+LONG_INTRO_CONTRIB_LEADIN_PAR	to summarize, we make the following contributions LONG_XXX
+
+LONG_CONTRIB_FIRST_PAR	we LONG_CONTRIB_VERB SCI_OUR_SYSTEM, LONG_CONTRIB_WHAT XXX
+LONG_CONTRIB_ITEM_PAR	we LONG_CONTRIB_VERB LONG_CONTRIB_WHAT XXX
+LONG_CONTRIB_ITEM_PAR!
+
+LONG_CONTRIB_VERB	present
+LONG_CONTRIB_VERB	describe
+LONG_CONTRIB_VERB	motivate
+LONG_CONTRIB_VERB	construct
+LONG_CONTRIB_VERB	evaluate
+LONG_CONTRIB_VERB	characterize
+LONG_CONTRIB_VERB	introduce
+
+LONG_CONTRIB_WHAT	a SCI_ADJ SCI_SYSTEM for SCI_VERBING SCI_GENERIC_NOUN
+LONG_CONTRIB_WHAT	a SCI_MODEL_TYPE that captures the essential behavior of SCI_THING_MOD
+LONG_CONTRIB_WHAT	an SCI_ADJ analysis of SCI_GENERIC_NOUN under realistic workloads
+LONG_CONTRIB_WHAT	the first SCI_VERBION of SCI_GENERIC_NOUN that does not assume SCI_GENERIC_NOUN
+LONG_CONTRIB_WHAT	a SCI_BUZZWORD_ADJ SCI_BUZZWORD_NOUN toolkit for the SCI_ACT
+LONG_CONTRIB_WHAT	a series of experiments that isolate the cost of SCI_GENERIC_NOUN
+LONG_CONTRIB_WHAT	a proof that SCI_OVERALL_THESIS_PROVE
+LONG_CONTRIB_WHAT	an implementation that we have released to the community
+
+LONG_INTRO_ROADMAP_PAR	the rest of this paper is organized as follows. LONG_ROADMAP_SEQ finally, we conclude LONG_XXX
+LONG_ROADMAP_SEQ	we begin by motivating the need for SCI_GENERIC_NOUN. next, we describe the SCI_MODEL_TYPE underlying SCI_OUR_SYSTEM. we then SCI_PRESENT_VERB our implementation, followed by our EVALUATION.
+LONG_ROADMAP_SEQ	first we motivate the need for SCI_GENERIC_NOUN. second, we place our work in context. third, we SCI_PRESENT_VERB the design and implementation of SCI_OUR_SYSTEM. fourth, we report on our EVALUATION.
+LONG_ROADMAP_SEQ	to begin with, we motivate the need for SCI_GENERIC_NOUN. on a similar note, we survey RELATED work. we then SCI_PRESENT_VERB SCI_OUR_SYSTEM in detail, and evaluate it on a SCI_ADJ testbed.
+
+# Runs of middle sentences, shared by every section in this file.
+LONG_MID_RUN+2	LONG_MID_SENT
+LONG_MID_RUN+4	LONG_MID_SENT LONG_MID_SENT
+LONG_MID_RUN+3	LONG_MID_SENT LONG_MID_SENT LONG_MID_SENT
+LONG_MID_RUN+2	LONG_MID_SENT LONG_MID_SENT LONG_MID_SENT LONG_MID_SENT
+LONG_MID_RUN	LONG_MID_SENT LONG_MID_SENT LONG_MID_SENT LONG_MID_SENT LONG_MID_SENT
+
+LONG_MID_SENT	LIT_MIDDLE_MAYBE LONG_MID_X LONG_XXX
+LONG_MID_X	SCI_GENERIC_NOUN is SCI_ADJ_ADV orthogonal to SCI_GENERIC_NOUN
+LONG_MID_X	the drawback of this type of SCI_APPROACH, LIT_REVERSAL, is that SCI_THING_MOD cannot be SCI_VERBED
+LONG_MID_X	we SCI_ASSUME that each component of SCI_OUR_SYSTEM SCI_SYS_VERBs SCI_GENERIC_NOUN independently of the others
+LONG_MID_X	this follows directly from the SCI_VERBION of SCI_GENERIC_NOUN
+LONG_MID_X	SCI_PEOPLE regularly SCI_SYS_VERB SCI_GENERIC_NOUN in the place of SCI_GENERIC_NOUN
+LONG_MID_X	the question, of course, is whether SCI_GENERIC_NOUN can be SCI_VERBED at all
+LONG_MID_X	LIT_ALTHOUGH this result at first appears SCI_ADJ_ADV unexpected, it is supported by RELATED work CITATION_SOMETIMES.
+LONG_MID_X	along these same lines, SCI_OUR_SYSTEM SCI_SYS_VERBs SCI_GENERIC_NOUN without SCI_VERBING SCI_GENERIC_NOUN
+LONG_MID_X	this is a SCI_ADJ property of SCI_OUR_SYSTEM
+LONG_MID_X	it should be noted here that SCI_OUR_SYSTEM makes no such assumption
+LONG_MID_X	consider the SCI_ADJ SCI_MODEL_TYPE of SCI_BY_WHO; our design is similar in spirit but SCI_ADJ_ADV simpler
+LONG_MID_X	SCI_GENERIC_NOUN and SCI_GENERIC_NOUN are not the same thing, LIT_ALTHOUGH they are often conflated in SCI_FIELD
+LONG_MID_X	we withhold a more thorough discussion for the moment
+LONG_MID_X	the implications of this design decision are far-reaching
+LONG_MID_X	SCI_THING_MOD would clearly benefit from the same treatment
+LONG_MID_X	our SCI_MODEL_TYPE does not require such a SCI_ADJ SCI_SYS_VERBION to run correctly, but it helps
+LONG_MID_X	any SCI_ADJ SCI_VERBION of SCI_GENERIC_NOUN will require that SCI_OVERALL_THESIS_PROVE
+LONG_MID_X	despite the results of SCI_BY_WHO, we can SCI_PROVE_VERB that SCI_OVERALL_THESIS_PROVE
+LONG_MID_X	a SCI_ADJ_ADV different SCI_APPROACH would be to SCI_VERB SCI_GENERIC_NOUN directly
+LONG_MID_X	this may or may not actually hold in practice
+LONG_MID_X	SCI_GENERIC_NOUN follows a SCI_MATH_ADJ distribution in every deployment we have examined
+LONG_MID_X	SCI_ADJ_ADV, the SCI_VERBION of SCI_GENERIC_NOUN dominates the cost of SCI_OUR_SYSTEM
+LONG_MID_X	we ran a week-long trace to confirm this intuition
+LONG_MID_X	the same argument applies, mutatis mutandis, to SCI_THING_MOD
+LONG_MID_X	this is arguably the most SCI_ADJ observation in the paper
+LONG_MID_X	we defer the SCI_ADJ details to the appendix of an extended version of this work
+
+#############################################################################
+######## Background and motivation ########
+#############################################################################
+
+LONG_BACK {
+
+ LONG_BACK_HEADER_LTX
+
+ LONG_BACK_INTRO_PAR
+
+ LONG_BACK_SUB_A_LTX
+
+ LONG_BACK_PARS
+
+ LONG_BACK_SUB_B_LTX
+
+ LONG_BACK_PARS
+
+}
+
+LONG_BACK {
+
+ LONG_BACK_HEADER_LTX
+
+ LONG_BACK_INTRO_PAR
+
+ LONG_BACK_SUB_A_LTX
+
+ LONG_BACK_PARS
+
+ LATEX_FIGURE
+
+ LONG_BACK_SUB_B_LTX
+
+ LONG_BACK_PARS
+
+ LONG_BACK_SUB_C_LTX
+
+ LONG_BACK_PARS
+
+}
+
+LONG_BACK_HEADER_LTX	\section{LONG_BACK_HEADER_T}
+LONG_BACK_HEADER_T=title
+LONG_BACK_HEADER_T	Background
+LONG_BACK_HEADER_T	Motivation
+LONG_BACK_HEADER_T	Background and Motivation
+LONG_BACK_HEADER_T	The Case for SCI_OUR_SYSTEM
+LONG_BACK_HEADER_T	Why SCI_GENERIC_NOUN?
+LONG_BACK_HEADER_T	Problem Statement
+
+LONG_BACK_SUB_A_LTX	\subsection{LONG_BACK_SUB_A_T}
+LONG_BACK_SUB_A_T=title
+LONG_BACK_SUB_A_T	The SCI_ACT
+LONG_BACK_SUB_A_T	SCI_GENERIC_NOUN Today
+LONG_BACK_SUB_A_T	A Motivating Example
+LONG_BACK_SUB_A_T	Setting and Assumptions
+LONG_BACK_SUB_A_T	Terminology
+
+LONG_BACK_SUB_B_LTX	\subsection{LONG_BACK_SUB_B_T}
+LONG_BACK_SUB_B_T=title
+LONG_BACK_SUB_B_T	Limitations of Existing SCI_SYSTEM_PL
+LONG_BACK_SUB_B_T	Requirements
+LONG_BACK_SUB_B_T	Design Goals
+LONG_BACK_SUB_B_T	Why SCI_GENERIC_NOUN Is Hard
+LONG_BACK_SUB_B_T	Sources of SCI_GENERIC_NOUN
+
+LONG_BACK_SUB_C_LTX	\subsection{LONG_BACK_SUB_C_T}
+LONG_BACK_SUB_C_T=title
+LONG_BACK_SUB_C_T	Threat Model
+LONG_BACK_SUB_C_T	Scope
+LONG_BACK_SUB_C_T	Non-Goals
+LONG_BACK_SUB_C_T	A Second Example
+LONG_BACK_SUB_C_T	Summary
+
+LONG_BACK_PARS+4	LONG_BACK_PARS_2
+LONG_BACK_PARS	LONG_BACK_PARS_3
+
+LONG_BACK_PARS_2 {
+
+LONG_BACK_PAR
+
+LONG_BACK_PAR
+
+}
+
+LONG_BACK_PARS_3 {
+
+LONG_BACK_PAR
+
+LONG_BACK_PAR
+
+LONG_BACK_PAR
+
+}
+
+LONG_BACK_PARS_4 {
+
+LONG_BACK_PAR
+
+LONG_BACK_PAR
+
+LONG_BACK_PAR
+
+LONG_BACK_PAR
+
+}
+
+LONG_BACK_INTRO_PAR	LONG_BACK_LEAD LONG_MID_RUN LONG_BACK_CLOSE
+LONG_BACK_PAR		LONG_BACK_LEAD LONG_MID_RUN LONG_BACK_CLOSE
+LONG_BACK_PAR		LONG_BACK_X LONG_MID_RUN LONG_BACK_CLOSE
+LONG_BACK_PAR+2		LONG_BACK_X LONG_MID_RUN
+
+LONG_BACK_LEAD	before we can SCI_PRESENT_VERB SCI_OUR_SYSTEM, we must first fix some terminology LONG_XXX
+LONG_BACK_LEAD	we begin with a brief account of SCI_GENERIC_NOUN LONG_XXX
+LONG_BACK_LEAD	this section motivates the SCI_ACT from first principles LONG_XXX
+LONG_BACK_LEAD	the reader unfamiliar with SCI_FIELD may wish to skim this section LONG_XXX
+LONG_BACK_LEAD	to understand SCI_OUR_SYSTEM one must first understand SCI_GENERIC_NOUN LONG_XXX
+LONG_BACK_LEAD	consider, as a running example, a deployment of SCI_THING_MOD LONG_XXX
+
+LONG_BACK_X	SCI_GENERIC_NOUN has been the subject of SCI_ADJ debate for decades CITATION_SOMETIMES.
+LONG_BACK_X	SCI_PEOPLE broadly agree that SCI_GENERIC_NOUN is desirable; they disagree about how to obtain it LONG_XXX
+LONG_BACK_X	SCI_THING_MOD is by now a standard tool in SCI_FIELD LONG_XXX
+LONG_BACK_X	the SCI_ACT rests on three assumptions, none of which is obviously true LONG_XXX
+LONG_BACK_X	most SCI_SYSTEM_PL in this space share a common structure LONG_XXX
+LONG_BACK_X	we now turn to the SCI_PROBLEM that motivates SCI_OUR_SYSTEM LONG_XXX
+LONG_BACK_X	a SCI_ADJ amount of prior effort has gone into the SCI_ACT CITATION_SOMETIMES.
+LONG_BACK_X	the SCI_VERBION of SCI_GENERIC_NOUN is, at bottom, an economic question LONG_XXX
+LONG_BACK_X	our own experience with SCI_GENERIC_NOUN has been sobering LONG_XXX
+LONG_BACK_X	SCI_ADJ_ADV, none of the SCI_SYSTEM_PL we surveyed handles SCI_GENERIC_NOUN LONG_XXX
+
+LONG_BACK_CLOSE	this is the SCI_PROBLEM that SCI_OUR_SYSTEM sets out to solve LONG_XXX
+LONG_BACK_CLOSE	we take this as our starting point LONG_XXX
+LONG_BACK_CLOSE	the remainder of this section makes this precise LONG_XXX
+LONG_BACK_CLOSE	SCI_OUR_SYSTEM is our answer to this question LONG_XXX
+LONG_BACK_CLOSE	we will return to this point in our EVALUATION LONG_XXX
+LONG_BACK_CLOSE	nothing in what follows depends on this assumption, LIT_REVERSAL LONG_XXX
+
+#############################################################################
+######## Related work, with subsections ########
+#############################################################################
+
+LONG_RELWORK {
+
+ \section{RELWORK_SEC_TITLE}
+
+ LONG_RELWORK_INTRO_PAR
+
+ LONG_RELWORK_SUB_LTX
+
+ RELWORK_BODY_P_MANY
+
+ LONG_RELWORK_SUB_LTX
+
+ RELWORK_BODY_P_MANY
+
+ LONG_RELWORK_SUB_LTX
+
+ RELWORK_BODY_P_FEW
+
+}
+
+LONG_RELWORK {
+
+ \section{RELWORK_SEC_TITLE}
+
+ LONG_RELWORK_INTRO_PAR
+
+ LONG_RELWORK_SUB_LTX
+
+ RELWORK_BODY_P_MANY
+
+ LONG_RELWORK_SUB_LTX
+
+ RELWORK_BODY_P_MANY
+
+ LONG_RELWORK_SUB_LTX
+
+ RELWORK_BODY_P_MANY
+
+ LONG_RELWORK_SUB_LTX
+
+ LONG_RELWORK_PARS_2
+
+}
+
+LONG_RELWORK_SUB_LTX	\subsection{LONG_RELWORK_SUB_T}
+LONG_RELWORK_SUB_T=title
+LONG_RELWORK_SUB_T!
+LONG_RELWORK_SUB_T	SCI_BUZZWORD_ADJ SCI_BUZZWORD_NOUN
+LONG_RELWORK_SUB_T	The SCI_ACT
+LONG_RELWORK_SUB_T	SCI_THING_P
+LONG_RELWORK_SUB_T	SCI_VERBING SCI_THING
+LONG_RELWORK_SUB_T	SCI_MODEL_TYPE_P for SCI_GENERIC_NOUN
+LONG_RELWORK_SUB_T	Early Work
+LONG_RELWORK_SUB_T	Concurrent Work
+LONG_RELWORK_SUB_T	SCI_BUZZWORD_ADJ SCI_SYSTEM_PL
+LONG_RELWORK_SUB_T	Analytical SCI_MODEL_TYPE_P
+LONG_RELWORK_SUB_T	Deployed SCI_SYSTEM_PL
+
+LONG_RELWORK_INTRO_PAR	LONG_RELWORK_LEAD LONG_MID_RUN
+LONG_RELWORK_LEAD	we group RELATED work into three broad categories LONG_XXX
+LONG_RELWORK_LEAD	a number of RELATED SCI_SYSTEM_PL have been proposed CITATION_SOMETIMES.
+LONG_RELWORK_LEAD	our work builds on RELATED work in SCI_FIELD LONG_XXX
+LONG_RELWORK_LEAD	the literature on SCI_GENERIC_NOUN is vast; we survey only the most relevant strands LONG_XXX
+LONG_RELWORK_LEAD	we now compare SCI_OUR_SYSTEM against the LONG_RELWORK_SOTA CITATION_SOMETIMES.
+LONG_RELWORK_SOTA	state of the art
+LONG_RELWORK_SOTA	best known SCI_SYSTEM_PL
+LONG_RELWORK_SOTA	dominant SCI_MODEL_TYPE_P
+
+LONG_RELWORK_PARS_2 {
+
+RELWORK_BODY_PAR
+
+RELWORK_BODY_PAR
+
+}
+
+#############################################################################
+######## Design ########
+#############################################################################
+
+LONG_DESIGN {
+
+ LONG_DESIGN_HEADER_LTX
+
+ LONG_DESIGN_INTRO_PAR
+
+ LATEX_DIAGRAM
+
+ LONG_DESIGN_SUB_OVERVIEW_LTX
+
+ LONG_DESIGN_PARS
+
+ LONG_DESIGN_SUB_COMPONENT_LTX
+
+ LONG_DESIGN_PARS
+
+ LONG_DESIGN_SUB_PROPERTY_LTX
+
+ LONG_DESIGN_PARS
+
+}
+
+LONG_DESIGN {
+
+ LONG_DESIGN_HEADER_LTX
+
+ LONG_DESIGN_INTRO_PAR
+
+ LONG_DESIGN_SUB_OVERVIEW_LTX
+
+ LATEX_DIAGRAM
+
+ LONG_DESIGN_PARS
+
+ LONG_DESIGN_SUB_COMPONENT_LTX
+
+ LONG_DESIGN_PARS
+
+ LONG_DESIGN_SUB_COMPONENT_LTX
+
+ LONG_DESIGN_PARS
+
+ LONG_DESIGN_SUB_PROPERTY_LTX
+
+ LONG_DESIGN_PARS
+
+}
+
+LONG_DESIGN_HEADER_LTX	\section{LONG_DESIGN_HEADER_T}
+LONG_DESIGN_HEADER_T=title
+LONG_DESIGN_HEADER_T	Design
+LONG_DESIGN_HEADER_T	Architecture
+LONG_DESIGN_HEADER_T	SCI_OUR_SYSTEM
+LONG_DESIGN_HEADER_T	The SCI_OUR_SYSTEM SCI_MODEL_TYPE
+LONG_DESIGN_HEADER_T	Design and Analysis
+LONG_DESIGN_HEADER_T	Principles
+
+LONG_DESIGN_SUB_OVERVIEW_LTX	\subsection{LONG_DESIGN_SUB_OVERVIEW_T}
+LONG_DESIGN_SUB_OVERVIEW_T=title
+LONG_DESIGN_SUB_OVERVIEW_T	Overview
+LONG_DESIGN_SUB_OVERVIEW_T	Architectural Overview
+LONG_DESIGN_SUB_OVERVIEW_T	Design Rationale
+LONG_DESIGN_SUB_OVERVIEW_T	The Big Picture
+LONG_DESIGN_SUB_OVERVIEW_T	System Model
+
+LONG_DESIGN_SUB_COMPONENT_LTX	\subsection{LONG_DESIGN_SUB_COMPONENT_T}
+LONG_DESIGN_SUB_COMPONENT_T=title
+LONG_DESIGN_SUB_COMPONENT_T!
+LONG_DESIGN_SUB_COMPONENT_T	The SCI_BUZZWORD_ADJ Layer
+LONG_DESIGN_SUB_COMPONENT_T	SCI_VERBING SCI_THING
+LONG_DESIGN_SUB_COMPONENT_T	SCI_SYS_VERBION of SCI_GENERIC_NOUN
+LONG_DESIGN_SUB_COMPONENT_T	The SCI_BUZZWORD_ADJ SCI_BUZZWORD_NOUN Component
+LONG_DESIGN_SUB_COMPONENT_T	Handling SCI_THING
+LONG_DESIGN_SUB_COMPONENT_T	Data Structures
+LONG_DESIGN_SUB_COMPONENT_T	Control Flow
+LONG_DESIGN_SUB_COMPONENT_T	The Core Algorithm
+
+LONG_DESIGN_SUB_PROPERTY_LTX	\subsection{LONG_DESIGN_SUB_PROPERTY_T}
+LONG_DESIGN_SUB_PROPERTY_T=title
+LONG_DESIGN_SUB_PROPERTY_T	Correctness
+LONG_DESIGN_SUB_PROPERTY_T	Invariants
+LONG_DESIGN_SUB_PROPERTY_T	Complexity
+LONG_DESIGN_SUB_PROPERTY_T	Why SCI_OUR_SYSTEM Works
+LONG_DESIGN_SUB_PROPERTY_T	Analysis
+
+LONG_DESIGN_PARS+4	LONG_DESIGN_PARS_2
+LONG_DESIGN_PARS	LONG_DESIGN_PARS_3
+
+LONG_DESIGN_PARS_2 {
+
+LONG_DESIGN_PAR
+
+LONG_DESIGN_PAR
+
+}
+
+LONG_DESIGN_PARS_3 {
+
+LONG_DESIGN_PAR
+
+LONG_DESIGN_PAR
+
+LONG_DESIGN_PAR
+
+}
+
+LONG_DESIGN_PARS_4 {
+
+LONG_DESIGN_PAR
+
+LONG_DESIGN_PAR
+
+LONG_DESIGN_PAR
+
+LONG_DESIGN_PAR
+
+}
+
+LONG_DESIGN_INTRO_PAR	LONG_DESIGN_LEAD LONG_MID_RUN LONG_DESIGN_CLOSE
+LONG_DESIGN_PAR		LONG_DESIGN_X LONG_MID_RUN LONG_DESIGN_CLOSE
+LONG_DESIGN_PAR+2	LONG_DESIGN_X LONG_MID_RUN
+
+LONG_DESIGN_LEAD	in this section we SCI_PRESENT_VERB the design of SCI_OUR_SYSTEM LONG_XXX
+LONG_DESIGN_LEAD	our design is guided by a single principle: SCI_OVERALL_THESIS_PROVE LONG_XXX
+LONG_DESIGN_LEAD	SCI_OUR_SYSTEM relies on the SCI_ADJ SCI_MODEL_TYPE outlined in this section LONG_XXX
+LONG_DESIGN_LEAD	the design of SCI_OUR_SYSTEM is best understood by starting from its SCI_MODEL_TYPE LONG_XXX
+LONG_DESIGN_LEAD	rather than SCI_VERBING SCI_GENERIC_NOUN, SCI_OUR_SYSTEM chooses to SCI_VERB SCI_GENERIC_NOUN LONG_XXX
+
+LONG_DESIGN_X	SCI_OUR_SYSTEM consists of three independent components CITATION_SOMETIMES.
+LONG_DESIGN_X	the SCI_ADJ component of SCI_OUR_SYSTEM is its SCI_SYS_VERBION of SCI_GENERIC_NOUN LONG_XXX
+LONG_DESIGN_X	we now describe how SCI_OUR_SYSTEM SCI_SYS_VERBs SCI_GENERIC_NOUN LONG_XXX
+LONG_DESIGN_X	the SCI_MODEL_TYPE for SCI_OUR_SYSTEM consists of four independent components LONG_XXX
+LONG_DESIGN_X	SCI_OUR_SYSTEM does not require a SCI_ADJ SCI_VERBION of SCI_GENERIC_NOUN to run correctly LONG_XXX
+LONG_DESIGN_X	suppose that there exists SCI_GENERIC_NOUN such that we can SCI_ADJ_ADV SCI_VERB SCI_THING_MOD LONG_XXX
+LONG_DESIGN_X	the SCI_ADJ_ADV simple structure of SCI_OUR_SYSTEM is not an accident LONG_XXX
+LONG_DESIGN_X	our SCI_MODEL_TYPE holds for most cases, and SCI_OUR_SYSTEM depends on this LONG_XXX
+LONG_DESIGN_X	on a similar note, we consider a SCI_SYSTEM consisting of n SCI_THING_P LONG_XXX
+LONG_DESIGN_X	the SCI_ADJ question is how SCI_OUR_SYSTEM behaves when SCI_GENERIC_NOUN is unavailable LONG_XXX
+LONG_DESIGN_X	we implemented this design without any SCI_ADJ difficulty LONG_XXX
+LONG_DESIGN_X	the SCI_BUZZWORD_ADJ portion of SCI_OUR_SYSTEM is by far its most SCI_ADJ piece LONG_XXX
+LONG_DESIGN_X	we use SCI_GENERIC_NOUN internally, LIT_ALTHOUGH nothing in the interface exposes it LONG_XXX
+
+LONG_DESIGN_CLOSE	the SCI_ADJ details are deferred to the next section LONG_XXX
+LONG_DESIGN_CLOSE	we now make this argument precise LONG_XXX
+LONG_DESIGN_CLOSE	this completes the description of SCI_OUR_SYSTEM LONG_XXX
+LONG_DESIGN_CLOSE	our EVALUATION bears this out LONG_XXX
+LONG_DESIGN_CLOSE	we leave the general case to future work LONG_XXX
+LONG_DESIGN_CLOSE	this design decision is revisited in our discussion LONG_XXX
+
+#############################################################################
+######## Implementation ########
+#############################################################################
+
+LONG_IMPL {
+
+ IMPL_SEC_LATEX_HEADER
+
+ IMPL_BODY_INSIDE
+
+ LONG_IMPL_SUB_LTX
+
+ LONG_IMPL_PARS
+
+ LONG_IMPL_SUB_LTX
+
+ LONG_IMPL_PARS
+
+}
+
+LONG_IMPL {
+
+ IMPL_SEC_LATEX_HEADER
+
+ IMPL_BODY_INSIDE
+
+ LONG_IMPL_SUB_LTX
+
+ LONG_IMPL_PARS
+
+ LONG_IMPL_SUB_LTX
+
+ LONG_IMPL_PARS
+
+ LONG_IMPL_SUB_LTX
+
+ LONG_IMPL_PARS
+
+}
+
+LONG_IMPL_SUB_LTX	\subsection{LONG_IMPL_SUB_T}
+LONG_IMPL_SUB_T=title
+LONG_IMPL_SUB_T!
+LONG_IMPL_SUB_T	The SCI_OUR_SYSTEM Prototype
+LONG_IMPL_SUB_T	Engineering Considerations
+LONG_IMPL_SUB_T	Portability
+LONG_IMPL_SUB_T	Optimizations
+LONG_IMPL_SUB_T	The Runtime
+LONG_IMPL_SUB_T	Deployment
+LONG_IMPL_SUB_T	Code Structure
+
+LONG_IMPL_PARS		LONG_IMPL_PAR
+LONG_IMPL_PARS+3	LONG_IMPL_PARS_2
+
+LONG_IMPL_PARS_2 {
+
+LONG_IMPL_PAR
+
+LONG_IMPL_PAR
+
+}
+
+LONG_IMPL_PAR	LONG_IMPL_X LONG_MID_RUN
+LONG_IMPL_X	our implementation of SCI_OUR_SYSTEM is LANGUAGE, and consists of NONZDIGITDIGIT lines of code LONG_XXX
+LONG_IMPL_X	we have not yet implemented the SCI_BUZZWORD_ADJ SCI_BUZZWORD_NOUN component, as this is the least SCI_ADJ piece LONG_XXX
+LONG_IMPL_X	the codebase of SCI_OUR_SYSTEM consists of NONZDIGIT files, most of them LANGUAGE LONG_XXX
+LONG_IMPL_X	SCI_OUR_SYSTEM runs unmodified on OSNAME LONG_XXX
+LONG_IMPL_X	it was necessary to cap the throughput used by SCI_OUR_SYSTEM to NONZDIGIT nodes LONG_XXX
+LONG_IMPL_X	we spent PERCENTAGE of our implementation effort on the SCI_SYS_VERBION of SCI_GENERIC_NOUN alone LONG_XXX
+LONG_IMPL_X	building the hand-optimized compiler was SCI_ADJ_ADV straightforward LONG_XXX
+LONG_IMPL_X	we plan to release SCI_OUR_SYSTEM under LICENSE_TYPE LONG_XXX
+LONG_IMPL_X	the SCI_ADJ_ADV difficult part was SCI_VERBING SCI_GENERIC_NOUN without SCI_VERBING SCI_GENERIC_NOUN LONG_XXX
+LONG_IMPL_X	our implementation was compiled with TOOLCHAIN LONG_XXX
+
+#############################################################################
+######## Evaluation ########
+#############################################################################
+
+LONG_EVAL {
+
+ EVAL_SEC_LATEX_HEADER
+
+ EVAL_SEC_INTRO_PAR
+
+ EVAL_SEC_SUBHEAD_1_LTX
+
+ EVAL_SEC_HARDWARE_PAR
+
+ LATEX_FIGURE
+
+ EVAL_SEC_SOFTWARE_PAR
+
+ LONG_EVAL_TABLE
+
+ LONG_EVAL_WORKLOAD_LTX
+
+ LONG_EVAL_PARS
+
+ EVAL_SEC_SUBHEAD_2_LTX
+
+ LATEX_FIGURE
+
+ EVAL_GUTS
+
+ LONG_EVAL_ANALYSIS_LTX
+
+ LATEX_FIGURE
+
+ LONG_EVAL_PARS
+
+ LONG_EVAL_SENSITIVITY_LTX
+
+ LATEX_FIGURE_MAYBE
+
+ LONG_EVAL_PARS
+
+}
+
+LONG_EVAL {
+
+ EVAL_SEC_LATEX_HEADER
+
+ EVAL_SEC_INTRO_PAR
+
+ EVAL_SEC_SUBHEAD_1_LTX
+
+ EVAL_SEC_HARDWARE_PAR
+
+ LONG_EVAL_TABLE
+
+ EVAL_SEC_SOFTWARE_PAR
+
+ LONG_EVAL_WORKLOAD_LTX
+
+ LONG_EVAL_PARS
+
+ EVAL_SEC_SUBHEAD_2_LTX
+
+ LONG_WIDE_FIGURE
+
+ EVAL_GUTS
+
+ LONG_EVAL_ANALYSIS_LTX
+
+ LATEX_FIGURE
+
+ LONG_EVAL_PARS
+
+ LATEX_FIGURE
+
+ LONG_EVAL_PARS
+
+ LONG_EVAL_SENSITIVITY_LTX
+
+ LONG_EVAL_PARS
+
+}
+
+LONG_EVAL_WORKLOAD_LTX	\subsection{LONG_EVAL_WORKLOAD_T}
+LONG_EVAL_WORKLOAD_T=title
+LONG_EVAL_WORKLOAD_T	Workloads
+LONG_EVAL_WORKLOAD_T	Methodology
+LONG_EVAL_WORKLOAD_T	Metrics and Workloads
+LONG_EVAL_WORKLOAD_T	Experimental Design
+
+LONG_EVAL_ANALYSIS_LTX	\subsection{LONG_EVAL_ANALYSIS_T}
+LONG_EVAL_ANALYSIS_T=title
+LONG_EVAL_ANALYSIS_T!
+LONG_EVAL_ANALYSIS_T	Macro-benchmarks
+LONG_EVAL_ANALYSIS_T	Micro-benchmarks
+LONG_EVAL_ANALYSIS_T	End-to-End SCI_BUZZWORD_NOUN
+LONG_EVAL_ANALYSIS_T	Comparison with RELATED SCI_SYSTEM_PL
+LONG_EVAL_ANALYSIS_T	Scaling Behavior
+LONG_EVAL_ANALYSIS_T	The Cost of SCI_GENERIC_NOUN
+
+LONG_EVAL_SENSITIVITY_LTX	\subsection{LONG_EVAL_SENSITIVITY_T}
+LONG_EVAL_SENSITIVITY_T=title
+LONG_EVAL_SENSITIVITY_T	Sensitivity Analysis
+LONG_EVAL_SENSITIVITY_T	Discussion of Results
+LONG_EVAL_SENSITIVITY_T	Where the Time Goes
+LONG_EVAL_SENSITIVITY_T	Anomalies
+LONG_EVAL_SENSITIVITY_T	Summary of Results
+
+LONG_EVAL_PARS+4	LONG_EVAL_PARS_2
+LONG_EVAL_PARS	LONG_EVAL_PARS_3
+
+LONG_EVAL_PARS_2 {
+
+LONG_EVAL_PAR
+
+LONG_EVAL_PAR
+
+}
+
+LONG_EVAL_PARS_3 {
+
+LONG_EVAL_PAR
+
+LONG_EVAL_PAR
+
+LONG_EVAL_PAR
+
+}
+
+LONG_EVAL_PARS_4 {
+
+LONG_EVAL_PAR
+
+LONG_EVAL_PAR
+
+LONG_EVAL_PAR
+
+LONG_EVAL_PAR
+
+}
+
+LONG_EVAL_PAR	LONG_EVAL_X LONG_EVAL_MID_RUN LONG_EVAL_CLOSE
+LONG_EVAL_PAR+2	LONG_EVAL_X LONG_EVAL_MID_RUN
+
+LONG_EVAL_MID_RUN+2	LONG_EVAL_MID
+LONG_EVAL_MID_RUN+3	LONG_EVAL_MID LONG_EVAL_MID
+LONG_EVAL_MID_RUN+4	LONG_EVAL_MID LONG_EVAL_MID LONG_EVAL_MID
+LONG_EVAL_MID_RUN+2	LONG_EVAL_MID LONG_EVAL_MID LONG_EVAL_MID LONG_EVAL_MID
+LONG_EVAL_MID_RUN	LONG_EVAL_MID LONG_MID_SENT LONG_EVAL_MID LONG_EVAL_MID
+
+LONG_EVAL_MID	LIT_MIDDLE_MAYBE LONG_EVAL_MID_X LONG_XXX
+LONG_EVAL_MID_X	the STAT_ADJ EVAL_MEASUREMENT_UM of SCI_OUR_SYSTEM was PERCENTAGE better than that of the closest baseline
+LONG_EVAL_MID_X	we scarcely anticipated how SCI_ADJ_ADV inaccurate our results were in this phase of the EVALUATION
+LONG_EVAL_MID_X	note the heavy tail on the curve, which we attribute to SCI_GENERIC_NOUN
+LONG_EVAL_MID_X	the curve is SCI_ADJ_ADV smooth up to NONZDIGIT nodes, at which point SCI_GENERIC_NOUN dominates
+LONG_EVAL_MID_X	error bars have been elided, as most of our data points fell outside of NONZDIGIT standard deviations from observed means
+LONG_EVAL_MID_X	these EVAL_MEASUREMENT_UM observations contrast with those seen in earlier work CITATION
+LONG_EVAL_MID_X	the results come from only NONZ trial runs, and were not reproducible
+LONG_EVAL_MID_X	we removed NONZDIGIT SCI_THING_P from our testbed to better understand this behavior
+LONG_EVAL_MID_X	SCI_OUR_SYSTEM improved on the baseline by a factor of NONZ, with the gap widening as load increased
+LONG_EVAL_MID_X	the STAT_ADJ EVAL_MEASUREMENT_UM held steady across the entire range we measured
+LONG_EVAL_MID_X	we suspect, but cannot show, that SCI_GENERIC_NOUN is responsible for the remaining PERCENTAGE
+LONG_EVAL_MID_X	the two curves cross at roughly NONZDIGIT nodes, which is where the SCI_ADJ effects of SCI_GENERIC_NOUN begin
+LONG_EVAL_MID_X	all measurements were repeated NONZ times and the STAT_ADJ value reported
+LONG_EVAL_MID_X	bugs in our system caused the unstable behavior throughout the experiments
+LONG_EVAL_MID_X	operator error alone cannot account for these results
+
+LONG_EVAL_X	our EVALUATION answers three questions LONG_XXX
+LONG_EVAL_X	we now turn to the second half of our experiments LONG_XXX
+LONG_EVAL_X	shown in the figure above, WHICH_EXPERIMENTS paint a different picture LONG_XXX
+LONG_EVAL_X	we next SCI_PRESENT_VERB the results of WHICH_EXPERIMENTS LONG_XXX
+LONG_EVAL_X	lastly, we discuss WHICH_EXPERIMENTS LONG_XXX
+LONG_EVAL_X	we have seen one type of behavior in the figures above; our other experiments paint a different picture LONG_XXX
+LONG_EVAL_X	the results of this experiment were SCI_ADJ_ADV surprising LONG_XXX
+LONG_EVAL_X	a natural question is how SCI_OUR_SYSTEM behaves under load LONG_XXX
+LONG_EVAL_X	we ran the same workload against RELATED SCI_SYSTEM_PL for comparison LONG_XXX
+
+LONG_EVAL_CLOSE	these results were obtained by SCI_BY_WHO CITATION, and we reproduce them here for clarity LONG_XXX
+LONG_EVAL_CLOSE	this concludes our discussion of WHICH_EXPERIMENTS LONG_XXX
+LONG_EVAL_CLOSE	we omit these results for anonymity LONG_XXX
+LONG_EVAL_CLOSE	we leave a full accounting of this effect to future work LONG_XXX
+LONG_EVAL_CLOSE	we consider this the most SCI_ADJ finding of our EVALUATION LONG_XXX
+
+#############################################################################
+######## A table of results ########
+#############################################################################
+
+LONG_EVAL_TABLE {
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{|p{1.0in}|p{0.82in}|p{0.82in}|}
+\hline
+{\bf LONG_TAB_H1} & {\bf LONG_TAB_H2} & {\bf LONG_TAB_H3} \\
+\hline
+LONG_TAB_OURROW
+LONG_TAB_ROW
+LONG_TAB_ROW
+LONG_TAB_ROW
+\hline
+\end{tabular}
+\caption{\small{LONG_TAB_CAPTION}}
+\label{tab:labelLONG_TABNUM+}
+\end{table}
+
+}
+
+LONG_TABNUM\+
+LONG_TABNUM\#
+
+LONG_TAB_H1=title
+LONG_TAB_H1	System
+LONG_TAB_H1	Configuration
+LONG_TAB_H1	SCI_SYSTEM
+LONG_TAB_H2=title
+LONG_TAB_H2	STAT_ADJ EVAL_MEASUREMENT_UM
+LONG_TAB_H3=title
+LONG_TAB_H3	EVAL_MEASUREMENT_UM
+LONG_TAB_H3	STAT_ADJ EVAL_MEASUREMENT_UM
+LONG_TAB_H3	Nodes
+LONG_TAB_H3	Overhead
+
+LONG_TAB_OURROW	SCI_OUR_SYSTEM & LONG_TAB_NUM & LONG_TAB_NUM \\
+LONG_TAB_ROW	GENERIC_LASTNAME et al.\ CITATION & LONG_TAB_NUM & LONG_TAB_NUM \\
+LONG_TAB_ROW	GENERIC_LASTNAME's SCI_SYSTEM CITATION & LONG_TAB_NUM & LONG_TAB_NUM \\
+LONG_TAB_ROW	the SCI_BUZZWORD_ADJ baseline & LONG_TAB_NUM & LONG_TAB_NUM \\
+LONG_TAB_ROW	unmodified OSNAME & LONG_TAB_NUM & LONG_TAB_NUM \\
+
+LONG_TAB_NUM	NONZDIGIT.DIGIT
+LONG_TAB_NUM	NONZ.DIGITDIGIT
+LONG_TAB_NUM	NONZDIGITDIGIT
+LONG_TAB_NUM	NONZDIGIT
+LONG_TAB_NUM	NONZ.DIGIT
+
+LONG_TAB_CAPTION=text
+LONG_TAB_CAPTION	the STAT_ADJ EVAL_MEASUREMENT_UM of SCI_OUR_SYSTEM, compared against RELATED SCI_SYSTEM_PL XXX
+LONG_TAB_CAPTION	summary of our EVALUATION XXX all figures are STAT_ADJ over NONZ runs XXX
+LONG_TAB_CAPTION	the SCI_ADJ parameters of our testbed XXX note that SCI_OUR_SYSTEM requires no special hardware XXX
+LONG_TAB_CAPTION	SCI_OUR_SYSTEM outperforms every SCI_SYSTEM we tested, LIT_ALTHOUGH the margin is workload-dependent XXX
+
+#############################################################################
+######## A double-column figure ########
+#############################################################################
+
+LONG_WIDE_FIGURE {
+
+\begin{figure*}[t]
+\centerline{\includegraphics[width=6in]{LATEX_FIG_FILENAME}}
+\caption{\small{
+SCI_GRAPH_CAPTION
+}}
+\label{LATEX_FIG_LABEL}
+\end{figure*}
+
+}
+
+#############################################################################
+######## Discussion and limitations ########
+#############################################################################
+
+LONG_DISC {
+
+ LONG_DISC_HEADER_LTX
+
+ LONG_DISC_PARS
+
+ LONG_DISC_SUB_LTX
+
+ LONG_DISC_PARS
+
+}
+
+LONG_DISC {
+
+ LONG_DISC_HEADER_LTX
+
+ LONG_DISC_PARS
+
+ LONG_DISC_SUB_LTX
+
+ LONG_DISC_PARS
+
+ LONG_DISC_SUB_LTX
+
+ LONG_DISC_PARS
+
+}
+
+LONG_DISC_HEADER_LTX	\section{LONG_DISC_HEADER_T}
+LONG_DISC_HEADER_T=title
+LONG_DISC_HEADER_T	Discussion
+LONG_DISC_HEADER_T	Limitations
+LONG_DISC_HEADER_T	Discussion and Limitations
+LONG_DISC_HEADER_T	Threats to Validity
+LONG_DISC_HEADER_T	Lessons Learned
+
+LONG_DISC_SUB_LTX	\subsection{LONG_DISC_SUB_T}
+LONG_DISC_SUB_T=title
+LONG_DISC_SUB_T!
+LONG_DISC_SUB_T	Threats to Validity
+LONG_DISC_SUB_T	When SCI_OUR_SYSTEM Fails
+LONG_DISC_SUB_T	Generality
+LONG_DISC_SUB_T	Deployment Experience
+LONG_DISC_SUB_T	Open Questions
+LONG_DISC_SUB_T	What We Would Do Differently
+
+LONG_DISC_PARS		LONG_DISC_PAR
+LONG_DISC_PARS+2	LONG_DISC_PARS_2
+
+LONG_DISC_PARS_2 {
+
+LONG_DISC_PAR
+
+LONG_DISC_PAR
+
+}
+
+LONG_DISC_PAR	LONG_DISC_X LONG_MID_RUN
+LONG_DISC_X	our results should be interpreted with several caveats in mind LONG_XXX
+LONG_DISC_X	SCI_OUR_SYSTEM is not a panacea LONG_XXX
+LONG_DISC_X	the most SCI_ADJ limitation of SCI_OUR_SYSTEM is its reliance on SCI_GENERIC_NOUN LONG_XXX
+LONG_DISC_X	we were surprised by how SCI_ADJ_ADV the SCI_VERBION of SCI_GENERIC_NOUN turned out to be LONG_XXX
+LONG_DISC_X	we do not claim that SCI_OUR_SYSTEM is optimal, only that SCI_OVERALL_THESIS_PROVE LONG_XXX
+LONG_DISC_X	a skeptical reader may object that SCI_GENERIC_NOUN invalidates our SCI_MODEL_TYPE LONG_XXX
+LONG_DISC_X	our testbed is SCI_ADJ_ADV small by the standards of SCI_FIELD LONG_XXX
+LONG_DISC_X	we deployed SCI_OUR_SYSTEM for a month and learned a great deal LONG_XXX
+LONG_DISC_X	the SCI_ADJ_ADV negative results of the previous section deserve comment LONG_XXX
+
+#############################################################################
+######## Future work ########
+#############################################################################
+
+LONG_FUTURE {
+
+ LONG_FUTURE_HEADER_LTX
+
+ LONG_FUTURE_PARS
+
+}
+
+LONG_FUTURE_HEADER_LTX	\section{LONG_FUTURE_HEADER_T}
+LONG_FUTURE_HEADER_T=title
+LONG_FUTURE_HEADER_T	Future Work
+LONG_FUTURE_HEADER_T	Ongoing and Future Work
+LONG_FUTURE_HEADER_T	Next Steps
+
+LONG_FUTURE_PARS	LONG_FUTURE_PAR
+LONG_FUTURE_PARS+2 {
+
+LONG_FUTURE_PAR
+
+LONG_FUTURE_PAR
+
+}
+
+LONG_FUTURE_PAR	LONG_FUTURE_X LONG_MID_RUN
+LONG_FUTURE_X	several SCI_ADJ directions remain open LONG_XXX
+LONG_FUTURE_X	we are currently extending SCI_OUR_SYSTEM to handle SCI_THING_MOD LONG_XXX
+LONG_FUTURE_X	the obvious next step is to SCI_VERB SCI_GENERIC_NOUN at scale LONG_XXX
+LONG_FUTURE_X	in future work we intend to SCI_PROVE_VERB that SCI_OVERALL_THESIS_PROVE LONG_XXX
+LONG_FUTURE_X	we hope to see many SCI_PEOPLE build on SCI_OUR_SYSTEM LONG_XXX
+LONG_FUTURE_X	a SCI_ADJ open question is whether SCI_GENERIC_NOUN can be SCI_VERBED without SCI_GENERIC_NOUN LONG_XXX
