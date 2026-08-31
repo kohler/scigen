@@ -116,12 +116,16 @@ if( defined $filename ) {
     $pdffile = $filename;
 }
 my $datafile = "$tmp_pre.dat";
+
+# an interrupt should remove our intermediate files and kill us
+scigen::catch_interrupts( \&clean );
+
 my @labels = ();
 my $num_points = 10;
 
 open( GPFILE, ">$gpfile" ) or die( "Couldn't write to $gpfile" );
 
-print GPFILE "set terminal pdf $color font \"Helvetica,18\"\n";
+print GPFILE "set terminal pdfcairo $color font \"Helvetica,18\"\n";
 print GPFILE "set output \"$pdffile\"\n";
 
 foreach my $line (@graph_lines) {
@@ -246,13 +250,21 @@ for( my $i = 0; $i < $curves; $i++ ) {
 
 close( GPFILE );
 
-if( system( "gnuplot", $gpfile ) != 0 ) {
+if( scigen::run_system( "gnuplot", $gpfile ) != 0 ) {
     clean();
     die( "Couldn't gnuplot $gpfile" );
 }
 clean();
 
+if ($scigen->enabled("nosubset")) {
+	rename($pdffile, "$pdffile~") || die;
+	if (scigen::run_system("gs", "-q", "-o", $pdffile, "-sDEVICE=pdfwrite", "-dNoOutputFonts", "$pdffile~") != 0) {
+		clean();
+		die("Couldn’t clean fonts from $pdffile");
+	}
+}
+
 # remove our intermediate files, but not the graph we were asked for
 sub clean {
-    unlink( $gpfile, glob( "$datafile.*" ) );
+    unlink( $gpfile, glob( "$datafile.*" ), "$pdffile~" );
 }

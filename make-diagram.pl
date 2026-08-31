@@ -21,6 +21,8 @@ use strict;
 require "./scigen.pm";
 use Getopt::Long;
 
+scigen::catch_interrupts();
+
 my $tmp_dir = "/tmp";
 
 my $sysname;
@@ -133,8 +135,16 @@ open( VIZ, ">$viz_file" ) or die( "Can't open $viz_file for writing" );
 print VIZ $graph_file;
 close( VIZ );
 
-system( $program, "-Tpdf", "-o", $pdf_file, $viz_file ) == 0
+scigen::run_system( $program, "-Tpdf", "-o", $pdf_file, $viz_file ) == 0
     or die( "Can't run $program on $viz_file" );
 
+if ($scigen->enabled("nosubset")) {
+    rename($pdf_file, "$pdf_file~") || die;
+    if (scigen::run_system("gs", "-q", "-o", $pdf_file, "-sDEVICE=pdfwrite", "-dNoOutputFonts", "$pdf_file~") != 0) {
+        clean();
+        die("Couldn’t clean fonts from $pdf_file");
+    }
+}
+
 # remove our intermediate file, but not the diagram we were asked for
-unlink( $viz_file );
+unlink( $viz_file, "$pdf_file~" );

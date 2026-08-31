@@ -18,8 +18,10 @@
 
 
 use strict;
-use scigen;
+require "./scigen.pm";
 use Getopt::Long;
+
+scigen::catch_interrupts();
 
 my $tmp_dir = "/tmp";
 
@@ -172,15 +174,15 @@ open( SVG, ">$svg_file" ) or die( "Can't open $svg_file for writing" );
 print SVG $svg_out;
 close( SVG );
 
-system( "inkscape -z --export-png=$png_file -b white -D $svg_file; " .
+scigen::run_system( "inkscape -z --export-png=$png_file -b white -D $svg_file; " .
 	"convert $png_file $eps_file" ) and
     die( "Can't run inkscape or convert on $svg_file" );
 
 if( !defined $filename ) {
-    system( "gv $eps_file" ) and
+    scigen::run_system( "gv", $eps_file ) and
 	die( "Can't run gv on $eps_file" );
 } else {
-    system( "cp $eps_file $filename" );
+    scigen::run_system( "cp", $eps_file, $filename );
 }
 
 # remove our intermediate files, but not the figure we were asked for

@@ -20,11 +20,118 @@ package scigen;
 use strict;
 use IO::File;
 use Data::Dumper;
+use Config ();
+use POSIX ();
 require "./Autoformat.pm";
 use vars qw($SCIGEND_PORT %SCIINFO);
 
 #### daemon settings ####
 $SCIGEND_PORT = 4724;
+
+#### interrupt handling ####
+
+# Signals that should tear down the whole pipeline rather than one command.
+my @interrupt_signals = qw(INT QUIT TERM HUP);
+my %signo;
+{
+    my @names = split(" ", $Config::Config{"sig_name"});
+    my @nums = split(" ", $Config::Config{"sig_num"});
+    @signo{@names} = @nums;
+}
+
+my $child_pid;
+my @cleanups;
+
+# Handle interrupt signals: pass them on to the command we are running,
+# run @cleanups, and then die from the signal ourselves so that whoever
+# called us sees an interrupt too.
+sub catch_interrupts {
+    push @cleanups, @_;
+    foreach my $sig (@interrupt_signals) {
+	$SIG{$sig} = \&interrupt;
+    }
+}
+
+sub interrupt {
+    my ($sig) = @_;
+    if (defined $child_pid) {
+	kill $sig, $child_pid;
+	&reap_child();
+    }
+    &die_from_signal($sig);
+}
+
+sub die_from_signal {
+    my ($sig) = @_;
+    while (my $cleanup = shift @cleanups) {
+	&$cleanup();
+    }
+    $SIG{$sig} = "DEFAULT";
+    kill $sig, $$;
+    # only reached if the signal is blocked or ignored
+    exit(128 + ($signo{$sig} || 0));
+}
+
+# Wait for $child_pid to die, escalating to SIGKILL if it takes too long.
+sub reap_child {
+    for (my $i = 0; $i < 20; ++$i) {
+	my $r = waitpid($child_pid, POSIX::WNOHANG());
+	if ($r != 0) {
+	    undef $child_pid;
+	    return;
+	}
+	select(undef, undef, undef, 0.1);
+    }
+    kill "KILL", $child_pid;
+    waitpid($child_pid, 0);
+    undef $child_pid;
+}
+
+# Die from an interrupt signal if $status, a wait status, says our child was
+# interrupted; shells report that as exit status 128 + signal number.
+sub check_status {
+    my ($status) = @_;
+    my $sig = $status & 127;
+    $sig = ($status >> 8) - 128 if !$sig && ($status >> 8) > 128;
+    foreach my $name (@interrupt_signals) {
+	&die_from_signal($name)
+	    if defined($signo{$name}) && $sig == $signo{$name};
+    }
+    return $status;
+}
+
+# Like system(), but interruptible: perl ignores SIGINT and SIGQUIT while
+# system() runs, so a Ctrl-C that killed the child would leave us going.
+sub run_system {
+    my $opt = ref($_[0]) eq "HASH" ? shift : {};
+    my @cmd = @_;
+    STDOUT->flush();
+    STDERR->flush();
+    my $pid = fork();
+    die("fork: $!") if !defined $pid;
+    if (!$pid) {
+	$SIG{$_} = "DEFAULT" foreach @interrupt_signals;
+	if (defined($opt->{"chdir"}) && !chdir($opt->{"chdir"})) {
+	    print STDERR "$opt->{chdir}: $!\n";
+	    POSIX::_exit(127);
+	}
+	exec(@cmd) or print STDERR "$cmd[0]: $!\n";
+	POSIX::_exit(127);
+    }
+    $child_pid = $pid;
+    my $status = -1;
+    while (1) {
+	my $r = waitpid($pid, 0);
+	if ($r == $pid) {
+	    $status = $?;
+	    last;
+	} elsif ($r < 0 && $! != POSIX::EINTR()) {
+	    last;
+	}
+    }
+    undef $child_pid;
+    return &check_status($status);
+}
 
 sub new {
     my $class = shift;
@@ -36,6 +143,7 @@ sub new {
         "fixed" => {},
         "format" => {},
         "defs" => {},
+        "defs_seen" => {},
         "re" => undef
     }, $class;
 }
@@ -49,6 +157,21 @@ sub enable {
         }
     }
     $self;
+}
+
+sub enabled {
+    my $self = shift;
+    @_ == 1 ? exists($self->{defs}->{$_[0]}) : keys %{$self->{defs}};
+}
+
+sub list_enabled {
+    my $self = shift;
+    keys %{$self->{defs}};
+}
+
+sub section_observed {
+    my $self = shift;
+    exists($self->{defs_seen}->{$_[0]});
 }
 
 sub read_rules {
@@ -65,6 +188,7 @@ sub read_rules {
 
         if ($line =~ /\A\[\s*(\w*)\s*\]\s*\z/) {
             $section = $1;
+            $self->{defs_seen}->{$section} = 1 if $section ne "";
             $including = $section eq "" || exists($self->{defs}->{$section});
             next;
         }

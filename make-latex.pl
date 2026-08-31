@@ -29,6 +29,9 @@ use File::Copy qw(move);
 # Every intermediate file we or our helper scripts create goes in here,
 # and the whole directory is removed when we exit.
 my $tmp_dir = tempdir( "scigen.XXXXXXXX", TMPDIR => 1, CLEANUP => 1 );
+# Ctrl-C (and other interrupts) stop our helper commands, remove $tmp_dir,
+# and kill us with the same signal.
+scigen::catch_interrupts( \&File::Temp::cleanup );
 my $tex_prefix = "scimakelatex.$$";
 my $tmp_pre = "$tmp_dir/$tex_prefix";
 my $tex_file = "$tmp_pre.tex";
@@ -42,6 +45,7 @@ my $seed;
 my $remote = 0;
 my $title;
 my $out_file;
+my $regenerate;
 
 sub usage {
     select(STDERR);
@@ -56,7 +60,7 @@ $0 [options]
     --seed <seed>             Seed the prng with this
     -o, --file <file>         Save the PDF here; the default is
                               ./scigen-<seed>.pdf in the current directory
-    --json <file>             Save the title and abstract here as JSON
+    --json <file>             Save the paper metadata here as JSON
     --tar <file>              Tar all the files up
     --savedir <dir>           Save the files in a directory; do not latex 
                               or dvips.  Must specify full path
@@ -65,7 +69,8 @@ $0 [options]
     --long                    Make a long (10-page) paper, with subsections
     --title <title>           Set the title (useful for talks)
     --sysname <name>          Set the system name
-    --enable <section>
+    --enable <section>        Enable a configuration section
+    --regenerate              Set seed from output name
 
 EOUsage
 
@@ -77,7 +82,7 @@ EOUsage
 # First parse options
 my %options;
 &GetOptions( \%options, "help|?", "author=s@", "seed=s", "tar=s", "file|o|output=s",
-	"json:s", "enable=s@",
+	"json:s", "enable=s@", "regenerate|regen",
 	"savedir=s", "remote", "talk", "long", "title=s", "sysname=s" )
     or &usage;
 
@@ -98,7 +103,6 @@ if( defined $options{"seed"} ) {
 } else {
     $seed = int rand 0xffffffff;
 }
-srand($seed);
 
 if( defined $options{"savedir"} ) {
     # --savedir saves the LaTeX source and skips the PDF entirely
@@ -108,6 +112,18 @@ if( defined $options{"savedir"} ) {
     # by default the paper lands in the current directory
     $out_file = ".";
 }
+
+if (defined($options{"regenerate"})) {
+    if (defined($out_file) && !-d $out_file && $out_file =~ /(?:\/|\A)scigen-(\d+)\.pdf\z/) {
+        $seed = int($1);
+    } else {
+        print STDERR "`--regenerate` requires `-o`\n";
+        exit 1;
+    }
+}
+
+srand($seed);
+
 if (defined($out_file) && -d $out_file) {
     $out_file =~ s/\/\z//;
     $out_file .= "/scigen-$seed.pdf";
@@ -232,8 +248,15 @@ close( BIB );
 if( !defined $options{"savedir"} ) {
 
     $ENV{"TEXPICTS"} = "$tmp_dir:";
-    system( "cp $class_files \"$tmp_dir\"; cd \"$tmp_dir\"; pdflatex -interaction=nonstopmode $tex_prefix; bibtex $tex_prefix; pdflatex -interaction=nonstopmode $tex_prefix; pdflatex -interaction=nonstopmode $tex_prefix; rm $class_files" )
-	and die( "Couldn't latex nothing." );
+    my @class_files = split( /\s+/, $class_files );
+    scigen::run_system( "cp", @class_files, $tmp_dir )
+	and die( "Couldn't copy class files to $tmp_dir" );
+    my @pdflatex = ( "pdflatex", "-interaction=nonstopmode", $tex_prefix );
+    foreach my $cmd ( \@pdflatex, [ "bibtex", $tex_prefix ],
+		      \@pdflatex, \@pdflatex ) {
+	scigen::run_system( { chdir => $tmp_dir }, @$cmd );
+    }
+    scigen::run_system( { chdir => $tmp_dir }, "rm", "-f", @class_files );
 
     move( $pdf_file, $out_file )
 	or die( "Couldn't write $out_file: $!" );
@@ -248,15 +271,15 @@ if( defined $options{"tar"} or defined $options{"savedir"} ) {
     my $f = $options{"tar"};
     my $tartmp = "$tmp_dir/tartmp.$$";
     my $all_files = "$tex_file $class_files @figures $bib_file";
-    system( "mkdir $tartmp; cp $all_files $tartmp/;" ) and 
+    scigen::run_system( "mkdir $tartmp; cp $all_files $tartmp/;" ) and
 	die( "Couldn't mkdir $tartmp" );
     $all_files =~ s/\Q$tmp_dir\E\///g;
-    system( "echo $seedstring > $tartmp/seed.txt" ) and 
+    scigen::run_system( "echo $seedstring > $tartmp/seed.txt" ) and
 	die( "Couldn't cat to $tartmp/seed.txt" );
     $all_files .= " seed.txt";
 
     if( defined $options{"tar"} ) {
-	system( "cd $tartmp; tar -czf $$.tgz $all_files; cd -; " . 
+	scigen::run_system( "cd $tartmp; tar -czf $$.tgz $all_files; cd -; " .
 		"cp $tartmp/$$.tgz $f; rm -rf $tartmp" ) and 
 		    die( "Couldn't tar to $f" );
     } else {
@@ -264,9 +287,9 @@ if( defined $options{"tar"} or defined $options{"savedir"} ) {
 	my $dir = $options{"savedir"};
 	# WARNING: we delete this directory if it exists
 	if( -d $dir ) {
-	    system( "rm -rf $dir" ) and die( "Couldn't rm existing $dir" );
+	    scigen::run_system( "rm", "-rf", $dir ) and die( "Couldn't rm existing $dir" );
 	}
-	system( "mv $tartmp $dir" ) and die( "Couldn't move $tartmp to $dir" );
+	scigen::run_system( "mv", $tartmp, $dir ) and die( "Couldn't move $tartmp to $dir" );
     }
 
 } else {
@@ -292,17 +315,22 @@ if (defined $options{"json"}) {
         chomp $pages;
         $pages = $pages =~ /\A[1-9][0-9]*\z/ ? int($pages) : undef;
     }
-	print J $json->encode({
-		"title" => $title,
-		"abstract" => $abstract,
-        "pages" => $pages
-	});
+    my %jdata = ("title" => $title,
+                 "abstract" => $abstract);
+    $jdata{"pages"} = $pages if defined($pages);
+    $jdata{"authors"} = \@authors if @authors;
+    print J $json->encode(\%jdata);
 	close J;
 }
 
 
 if( defined $out_file ) {
     print "wrote $out_file\n";
+}
+
+foreach my $enablement ($tex_dat->list_enabled()) {
+    print STDERR "\n***\n*** WARNING: section $enablement not observed\n***\n\n"
+        if !$tex_dat->section_observed($enablement);
 }
 
 # $tmp_dir, and everything our helpers left in it, goes away here
@@ -313,7 +341,7 @@ sub make_figure {
 
     for( my $try = 0; $try < $figure_tries; $try++ ) {
 	$cmd = &$make_cmd( int rand 0xffffffff );
-	return if system( $cmd ) == 0 and -f $file;
+	return if scigen::run_system( $cmd ) == 0 and -f $file;
 	unlink( $file );
     }
 

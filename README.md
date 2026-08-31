@@ -9,7 +9,7 @@ history, including the papers that got accepted to real conferences.
 This repository is the original source, updated to run on a modern
 toolchain: it produces PDFs directly (rather than going through DVI and
 PostScript), it is warning-clean under current Perl, and `make-latex.pl`
-can dump the generated title and abstract as JSON.
+can dump the generated paper's metadata as JSON.
 
 ## Requirements
 
@@ -71,7 +71,7 @@ is left behind.
 | --- | --- |
 | `--author <name>` | Add an author. Repeat for multiple authors. Authors are also salted into the bibliography, so they cite themselves. |
 | `--file <file>` | Write the finished PDF here. Defaults to `./scigen-<seed>.pdf`. |
-| `--json <file>` | Also write the title and abstract to this file as JSON (see below). |
+| `--json <file>` | Also write the paper's metadata to this file as JSON (see below). |
 | `--seed <seed>` | Seed the PRNG. The same seed reproduces the same paper. Defaults to a random 32-bit value. The seed is printed on exit, or written to `seed.txt` under `--tar`/`--savedir`. |
 | `--title <title>` | Force the paper's title instead of generating one. |
 | `--enable <section>` | Turn on a named grammar section (see [Sections](#sections)). Repeat for several. Passed through to the figure generators. |
@@ -88,7 +88,7 @@ runs LaTeX as usual, so it leaves you a PDF as well as the archive.
 
 ## JSON output
 
-`--json <file>` writes the paper's title and abstract to `<file>` as
+`--json <file>` writes the paper's metadata to `<file>` as
 pretty-printed UTF-8 JSON:
 
 ```sh
@@ -99,11 +99,17 @@ pretty-printed UTF-8 JSON:
 ```json
 {
    "title" : "An Analysis of Cache Coherence",
-   "abstract" : "Recent advances in authenticated communication and wearable algorithms\nare rarely at odds with extreme programming. In our research, we demonstrate\nthe synthesis of 802.11 mesh networks, which embodies the key principles\nof robotics. GueZope, our new system for trainable information, is the\nsolution to all of these issues."
+   "abstract" : "Recent advances in authenticated communication and wearable algorithms\nare rarely at odds with extreme programming. In our research, we demonstrate\nthe synthesis of 802.11 mesh networks, which embodies the key principles\nof robotics. GueZope, our new system for trainable information, is the\nsolution to all of these issues.",
+   "pages" : 10,
+   "authors" : [
+      "Jane Q. Researcher"
+   ]
 }
 ```
 
-The object has exactly two keys, `title` and `abstract`, both strings.
+`title` and `abstract` are strings. `pages` is the PDF's page count; it is
+`null` unless a PDF was written. `authors` lists the `--author` names in the
+order given, and is absent when no authors were supplied.
 
 Things worth knowing:
 
@@ -183,6 +189,87 @@ which `make-latex.pl` also forwards so that an enabled section restyles the
 figures along with the prose. Each cleans up after itself and leaves only
 the file named by `--file`.
 
+## Corpora
+
+`make-corpus.pl` and `corpus-genpaper.js` build papers fast enough to feed a
+load test, by generating a corpus once and then assembling papers out of its
+pages.
+
+```sh
+# a large pool of first pages, and a smaller pool of whole papers
+seq 1 1000 | xargs -P 8 -I% ./make-latex.pl --enable usenix,nosubset,truncated \
+    --seed % --file titles/t%.pdf --json titles/t%.json
+seq 1001 1100 | xargs -P 8 -I% ./make-latex.pl --enable usenix,nosubset --long \
+    --seed % --file bodies/b%.pdf --json bodies/b%.json
+
+./make-corpus.pl titles bodies             # -> scicorpus-<date>.{pdf,json}
+mutool run corpus-genpaper.js scicorpus-<date>.pdf > paper.pdf
+```
+
+`make-corpus.pl <title_dir> <full_dir>` concatenates the first page of every
+PDF in the first directory and all of every PDF in the second, deduplicates
+the result with `mutool clean -gggg`, and writes an index beside it:
+
+```json
+{"title_count": 1000, "count": 1100, "page_basis": 9,
+ "contents": [{"first_page": 1, "pages": 1, "title": "...", "abstract": "..."},
+              ...]}
+```
+
+`first_page` is where the entry starts in the corpus PDF and `pages` is how
+many pages it contributed, so a title-only entry has `"pages": 1`. Everything
+else in an entry is copied from its JSON sidecar. Entries are ordered
+title-only first, so the first `title_count` of them have no interior.
+
+`page_basis` is one less than the shortest paper in `<full_dir>`, so every one
+of them can supply every page a paper draws separately. It is left out, with a
+warning, if the shortest paper is a single page.
+
+### `corpus-genpaper.js`
+
+Writes one paper to standard output and its metadata, as a line of JSON, to
+standard error.
+
+```sh
+mutool run corpus-genpaper.js [options] CORPUS.pdf > paper.pdf
+```
+
+| | |
+| --- | --- |
+| `-B`, `--basis <n>` | The page basis: how many pages are drawn independently. Defaults to the index's `page_basis`, and may not exceed it. |
+| `-s`, `--seed <n>` | Seed the prng. |
+| `-i`, `--index <file>` | The corpus index; the default is `CORPUS.json`. |
+| `-o`, `--output <file>` | Where the PDF goes; the default is `/dev/stdout`. |
+| `-m`, `--metadata <file>` | Where the JSON goes; the default is `/dev/stderr`, and `-m none` writes none. |
+| `-C`, `--choices <n,n,…>` | Fix the entries chosen for each basis position, rather than drawing them. |
+
+Options take their value joined, separated, or with an `=`: `-B10`, `-B 10`,
+`-B=10`, `--basis 10`, and `--basis=10` are all the same.
+
+Page *k* of the paper is page *k* of some corpus entry, so the page numbers
+printed on it stay in sequence. Page 1 comes from any entry, and also supplies
+the paper's metadata; pages 2 through `-B` come from entries with an interior,
+each drawn separately; and the entry drawn for the last basis position runs to
+its own final page, so the paper ends on references. That last entry sets the
+length, so papers come out as long as the entries they end on: a corpus of
+9-to-13-page bodies gives 9-to-13-page papers.
+
+**Pass a `-s` from any driver that runs several at once.** mujs seeds
+`Math.random()` identically in every process, so the script carries its own
+prng; without `-s` it takes a seed from the clock, which only moves once a
+millisecond. The seed it used is reported in the metadata, and feeding that
+back reproduces the paper exactly.
+
+The `title` and `abstract` in the metadata are LaTeX, so they can contain
+`\emph{...}` and braced system names — see [JSON output](#json-output). Strip
+that before posting them anywhere.
+
+Assembling a paper costs about 70ms, nearly all of it opening the corpus:
+2311 pages and 36MB in the case measured. Which entries a paper draws from
+barely affects its size, because `--enable nosubset` leaves the whole corpus
+sharing one set of font programs — ten, for that corpus — and outlined figures
+leave no others behind.
+
 ## Grammar files
 
 The generator is a weighted context-free grammar expander (`scigen.pm`).
@@ -248,6 +335,23 @@ wins:
 A section that is not enabled is skipped in its entirety — not just its
 rules, but its `.include`, `NAME.`, and `NAME=fmt` lines too. Enabling a
 name that no grammar defines is accepted silently and does nothing.
+
+### `[nosubset]`
+
+`--enable nosubset` defines `LATEX_MAPLINES`, a block of `\pdfmapline`
+directives that tell pdfTeX to embed each font whole rather than as a
+per-document subset. It is meant for building a corpus that will be
+concatenated: subsetted papers embed a different byte stream of the same
+typeface each, but papers built this way all embed the same one, so
+`mutool merge` followed by `mutool clean -gggg` collapses the fonts to a
+single copy. Six usenix papers carry 21 distinct font programs normally and
+5 with `nosubset` — and the merged, cleaned corpus is smaller even though
+each paper is about 90KB larger.
+
+Every line names an encoding vector (`<8r.enc`, `<7t.enc`, `<texmsym.enc`,
+…). That is not optional: pdfTeX cannot include a font whole from a map
+entry with no encoding, and fails with `builtin glyph names is empty`.
+Pages render identically either way.
 
 ## Known breakage
 

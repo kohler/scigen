@@ -3503,6 +3503,7 @@ LATEX_HEADER {
 
 LATEX_DOCCLASS
 LATEX_FONTCLASS
+LATEX_MAPLINES
 LATEX_CITEPACK
 \usepackage{graphicx}
 \usepackage[latin1]{inputenc}
@@ -3524,6 +3525,8 @@ LATEX_FONTCLASS+2 \usepackage{times}
 LATEX_FONTCLASS \usepackage{helvet}
 LATEX_FONTCLASS \usepackage{palatino}
 LATEX_FONTCLASS 
+
+LATEX_MAPLINES
 
 LATEX_DOCCLASS+3 {
 \documentclass[LATEX_FONTSIZE, twocolumn]{article}
@@ -3817,3 +3820,27 @@ LATEX_DOCCLASS {
 LATEX_FONTCLASS
 LATEX_BIBSTYLE \bibliographystyle{plain}
 LATEX_CITEPACK
+
+[truncated]
+SCI_IMPL
+SCI_EVAL
+SCI_CONCL
+
+[nosubset]
+# Embed complete font programs instead of per-document subsets. Each paper
+# grows by roughly 90KB, but every paper then embeds byte-identical fonts, so
+# concatenating a corpus and running `mutool clean -gggg` collapses the fonts
+# to one copy each. pdfTeX cannot include a font whole unless the map entry
+# names an encoding vector; without one it dies with "builtin glyph names is
+# empty", hence the `<`-encoding on every line below.
+LATEX_MAPLINES {
+\pdfmapline{=ptmr8r NimbusRomNo9L-Regu " TeXBase1Encoding ReEncodeFont " <8r.enc <<utmr8a.pfb}
+\pdfmapline{=ptmb8r NimbusRomNo9L-Medi " TeXBase1Encoding ReEncodeFont " <8r.enc <<utmb8a.pfb}
+\pdfmapline{=ptmri8r NimbusRomNo9L-ReguItal " TeXBase1Encoding ReEncodeFont " <8r.enc <<utmri8a.pfb}
+\pdfmapline{=ptmbi8r NimbusRomNo9L-MediItal " TeXBase1Encoding ReEncodeFont " <8r.enc <<utmbi8a.pfb}
+\pdfmapline{=psyr StandardSymL <8a.enc <<usyr.pfb}
+\pdfmapline{=cmr10 CMR10 <7t.enc <<cmr10.pfb}
+\pdfmapline{=cmmi10 CMMI10 <texmital.enc <<cmmi10.pfb}
+\pdfmapline{=cmsy10 CMSY10 <texmsym.enc <<cmsy10.pfb}
+\pdfmapline{=cmex10 CMEX10 <texmext.enc <<cmex10.pfb}
+}
