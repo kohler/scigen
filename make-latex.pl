@@ -77,7 +77,7 @@ EOUsage
 # First parse options
 my %options;
 &GetOptions( \%options, "help|?", "author=s@", "seed=s", "tar=s", "file|o|output=s",
-	"json=s", "enable=s@",
+	"json:s", "enable=s@",
 	"savedir=s", "remote", "talk", "long", "title=s", "sysname=s" )
     or &usage;
 
@@ -106,7 +106,11 @@ if( defined $options{"savedir"} ) {
     $out_file = $options{"file"};
 } else {
     # by default the paper lands in the current directory
-    $out_file = "scigen-$seed.pdf";
+    $out_file = ".";
+}
+if (defined($out_file) && -d $out_file) {
+    $out_file =~ s/\/\z//;
+    $out_file .= "/scigen-$seed.pdf";
 }
 
 my $name_dat = undef;
@@ -273,10 +277,25 @@ if (defined $options{"json"}) {
 	my ($title) = $tex_dat->expand("SCI_TITLE");
 	my ($abstract) = $tex_dat->expand("SCI_ABSTRACT");
 	my ($json) = JSON->new->utf8->pretty;
-	open(J, ">", $options{"json"}) or die;
+    my ($jfile) = $options{"json"};
+    if ($jfile eq "") {
+        $jfile = defined($out_file) ? "$out_file.json" : ".";
+    }
+    if (-d $jfile) {
+        $jfile =~ s/\/\z//;
+        $jfile .= "/scigen-$seed.pdf.json";
+    }
+	open(J, ">", $jfile) or die;
+    my $pages;
+    if (defined $out_file) {
+        $pages = `mutool run countpages.js \Q$out_file\E`;
+        chomp $pages;
+        $pages = $pages =~ /\A[1-9][0-9]*\z/ ? int($pages) : undef;
+    }
 	print J $json->encode({
 		"title" => $title,
-		"abstract" => $abstract
+		"abstract" => $abstract,
+        "pages" => $pages
 	});
 	close J;
 }
