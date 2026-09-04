@@ -74,6 +74,7 @@ is left behind.
 | `--json <file>` | Also write the paper's metadata to this file as JSON (see below). |
 | `--seed <seed>` | Seed the PRNG. The same seed reproduces the same paper. Defaults to a random 32-bit value. The seed is printed on exit, or written to `seed.txt` under `--tar`/`--savedir`. |
 | `--title <title>` | Force the paper's title instead of generating one. |
+| `--title-only` | Print the title this seed selects, and exit without building anything. |
 | `--enable <section>` | Turn on a named grammar section (see [Sections](#sections)). Repeat for several. Passed through to the figure generators. |
 | `--sysname <name>` | Force the name of the system the paper is about (normally something like `GueZope`). |
 | `--tar <file>` | Also write a `.tgz` of the LaTeX source, figures, `.bib` file, class files, and a `seed.txt`. |
@@ -100,6 +101,8 @@ pretty-printed UTF-8 JSON:
 {
    "title" : "An Analysis of Cache Coherence",
    "abstract" : "Recent advances in authenticated communication and wearable algorithms\nare rarely at odds with extreme programming. In our research, we demonstrate\nthe synthesis of 802.11 mesh networks, which embodies the key principles\nof robotics. GueZope, our new system for trainable information, is the\nsolution to all of these issues.",
+   "sysname" : "GueZope",
+   "seed" : 1234,
    "pages" : 10,
    "authors" : [
       "Jane Q. Researcher"
@@ -107,9 +110,11 @@ pretty-printed UTF-8 JSON:
 }
 ```
 
-`title` and `abstract` are strings. `pages` is the PDF's page count; it is
-`null` unless a PDF was written. `authors` lists the `--author` names in the
-order given, and is absent when no authors were supplied.
+`title` and `abstract` are strings. `sysname` is the name of the system the
+paper is about, as the grammar saw it (so it may carry `\emph{...}`).
+`seed` is the PRNG seed. `pages` is the PDF's page count; it is `null`
+unless a PDF was written. `authors` lists the `--author` names in the order
+given, and is absent when no authors were supplied.
 
 Things worth knowing:
 
@@ -170,6 +175,140 @@ print JSON->new->utf8->pretty->encode({
 
 `SYSNAME` must be supplied before the rules are read, as above; the paper
 grammar expects it to come from the caller.
+
+## Reviews
+
+`make-review.pl` writes a conference-style review of a paper: an Overall
+Merit score, a Reviewer Expertise score, a paper summary of about 100
+words, and comments to the authors of about 300 words. It is plain text,
+no LaTeX involved, and runs in well under a second.
+
+```sh
+./make-latex.pl --seed 1234 --savedir /tmp/p --json paper.json
+./make-review.pl --paper paper.json
+```
+
+```
+Overall Merit: 2
+Reviewer Expertise: 3
+
+Paper Summary:
+This paper presents GueZope, a framework for analyzing cache coherence.
+The motivation is that existing systems for cache coherence ...
+
+Comments to Author:
+I lean toward rejecting this paper. The problem is timely and the paper
+is generally clear, but I was not convinced that the evaluation supports
+the central claim.
+
+Strengths:
+- ...
+
+Weaknesses:
+- ...
+
+Detailed comments:
+- ...
+
+I recommend rejection, but I would encourage the authors to compare
+against a modern baseline and resubmit.
+```
+
+The scores are drawn first and steer the text. Overall Merit is 1 to 5
+with probabilities 30%, 40%, 15%, 10%, and 5%; Reviewer Expertise is
+uniform on 1 to 4. A merit of 1 or 2 produces a review that recommends
+rejection and finds three to five weaknesses; a 4 or 5 recommends
+acceptance and treats its complaints as camera-ready suggestions. An
+expertise of 3 or 4 names specific prior work and argues with the design;
+a 1 or 2 hedges and asks for background.
+
+`--paper <file>` points at a JSON file from `make-latex.pl --json`. The
+review then refers to the paper's title and system name, and its summary
+paraphrases the paper's topics: any of the grammar's `SCI_THING` and
+`SCI_FIELD` phrases that appear in the title or abstract become the
+review's idea of what the paper is about. A JSON file without `sysname`
+still works; the name is recovered from the abstract or the title where
+possible, and invented otherwise. Without `--paper`, the review is of a
+paper that exists only in the reviewer's imagination, and the title and
+system name are generated fresh.
+
+| Option | Meaning |
+| --- | --- |
+| `--paper <file>` | Review the paper described by this `make-latex.pl --json` file. |
+| `--papers <file>` | Review every paper in this JSON array of such objects (see below). |
+| `--shard <k>/<n>` | With `--papers`, review only papers whose index is `k` mod `n`. Run `n` shards in parallel and concatenate the results. |
+| `--title <title>`, `--sysname <name>` | Set the paper's title or system name, overriding `--paper`. |
+| `--merit <n>`, `--expertise <n>` | Force a score instead of drawing it. |
+| `-n`, `--count <n>` | Write several reviews of the same paper, with independent scores. |
+| `--seed <seed>` | Seed the PRNG. The same seed and paper reproduce the same reviews. The seed is printed to stderr if it was not given. With `--papers`, paper `i` is seeded with `seed + i`, so a shard produces exactly what the unsharded run would. |
+| `-o`, `--file <file>` | Write here instead of to stdout. |
+| `--json [<file>]` | Write JSON instead of text, to `<file>` or to stdout. |
+| `--enable <section>` | Turn on a grammar section, as for `make-latex.pl`. |
+
+In text form, several reviews are separated by a line of `=`. In JSON
+form the output is always an array, one object per review:
+
+```json
+[
+   {
+      "merit" : 2,
+      "expertise" : 3,
+      "summary" : "This paper presents GueZope, ...",
+      "comments" : "I lean toward rejecting this paper. ...",
+      "title" : "An Analysis of Cache Coherence",
+      "sysname" : "GueZope",
+      "seed" : 1234
+   }
+]
+```
+
+`summary` and `comments` are hard-wrapped at about 72 columns, like the
+abstract in the paper JSON, and `comments` contains the `Strengths:` and
+`Weaknesses:` headings and `- ` bullets shown above. The LaTeX that leaks
+into the paper JSON has been stripped from all the strings here.
+
+### Reviewing a corpus
+
+`--papers <file>` takes a JSON array of paper objects, each with at least
+`title` and `abstract`, such as the index that `make-corpus.pl` writes or a
+HotCRP batch-upload file, and writes one result per paper:
+
+```sh
+for k in 0 1 2 3; do
+    ./make-review.pl --seed 1 --papers papers.json -n 10 --shard $k/4 \
+        --json reviews-$k.json &
+done; wait
+```
+
+```json
+[
+   {
+      "index" : 0,
+      "title" : "Contrasting Voice-over-IP and Access Points Using Alp",
+      "sysname" : "Alp",
+      "seed" : 1,
+      "content_file" : "0000.pdf",
+      "reviews" : [ { "merit" : 2, "expertise" : 3, "summary" : "...", "comments" : "..." }, ... ]
+   }
+]
+```
+
+`index` is the paper's position in the input array. `content_file` is
+copied from the paper's `submission` object when there is one. Each shard
+writes only its own papers, in index order; merge the shards by `index`.
+A corpus of 5000 papers with ten reviews each takes a few minutes on
+eight cores.
+
+The grammar is `scireview.in`, which includes `scirules.in` for its
+vocabulary. Tone lives in sections: `make-review.pl` enables
+`merit<n>` and `expertise<n>` for the drawn scores, plus one of
+`negative`, `middling`, or `positive` and one of `novice` or `expert`, and
+the grammar defines the verdict sentences, the number of bullets, and the
+severity of each complaint per section. The driver also defines
+`PAPER_TITLE`, `PAPER_THING` (the topic phrases), `PAPER_SUBJECT` (one
+topic, with `PAPER_IS_ARE` and `PAPER_HAS_HAVE` for verb agreement), and
+`PAPER_FIELD`. Bullets that share a template are regenerated, since the
+grammar's own no-duplicate check only catches identical text.
 
 ## Figures on their own
 
@@ -280,6 +419,7 @@ Rules live in the `.in` files:
 | `scirules.in` | The paper grammar, including the LaTeX preamble. Start rule `SCIPAPER_LATEX`. |
 | `system_names.in` | System names. Start rule `SYSTEM_NAME`. |
 | `talkrules.in` | The talk grammar. Start rule `SCITALK_LATEX`. |
+| `scireview.in` | The review grammar for `make-review.pl`; includes `scirules.in`. Start rules `REV_SUMMARY` and `REV_COMMENTS`. |
 | `functions.in` | Curve shapes (`EXPR`) for `make-graph.pl`, which builds the plot itself from the `GNUPLOT` rule in `scirules.in`. |
 | `graphviz.in` | Diagram grammar for `make-diagram.pl`. Start rule `GRAPHVIZ`. |
 | `svg_figures.in` | Talk-figure grammar for `make-talk-figure.pl`. Start rule `SVG_FIG`. |

@@ -1,0 +1,1083 @@
+#
+# Review grammar for SCIgen: generates a conference-style review of a
+# generated paper. Driven by make-review.pl.
+#
+# The driver defines SYSNAME, PAPER_TITLE, PAPER_THING (a topic phrase taken
+# from the paper's title or abstract), and PAPER_FIELD, and enables sections
+# that steer the tone:
+#
+#   merit1 .. merit5         the Overall Merit score
+#   negative                 merit 1 or 2
+#   middling                 merit 3
+#   positive                 merit 4 or 5
+#   expertise1 .. expertise4 the Reviewer Expertise score
+#   novice                   expertise 1 or 2
+#   expert                   expertise 3 or 4
+#
+# Rules defined only inside sections must be defined in every section of
+# their group, since the base grammar has no fallback for them.
+
+#    This file is part of SCIgen.
+#
+#    SCIgen is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    SCIgen is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+
+SCIRULES.include scirules.in
+
+#############################################################################
+####### Top level #######
+#############################################################################
+
+REV_SUMMARY=text
+REV_SUMMARY+3 REV_SUM_OPEN REV_SUM_CONTEXT REV_SUM_APPROACH REV_SUM_IMPL REV_SUM_EVAL REV_SUM_CLOSE
+REV_SUMMARY+2 REV_SUM_OPEN REV_SUM_APPROACH REV_SUM_APPROACH_MORE REV_SUM_IMPL REV_SUM_EVAL REV_SUM_CLOSE
+REV_SUMMARY REV_SUM_OPEN REV_SUM_CONTEXT REV_SUM_APPROACH REV_SUM_APPROACH_MORE REV_SUM_EVAL REV_SUM_CLOSE
+
+REV_COMMENTS {
+REV_OPENING
+
+REV_PROSE_CONCERN
+
+Strengths:
+REV_STRENGTHS
+Weaknesses:
+REV_WEAKNESSES
+Detailed comments:
+REV_DETAILS
+REV_CLOSING
+}
+
+REV_COMMENTS {
+REV_OPENING
+
+REV_PROSE_CONCERN
+
+Strengths:
+REV_STRENGTHS
+Weaknesses:
+REV_WEAKNESSES
+Questions for the authors:
+REV_Q_ITEM
+REV_Q_ITEM
+
+Minor comments:
+REV_DETAILS
+REV_CLOSING
+}
+
+REV_COMMENTS {
+REV_OPENING
+
+Strengths:
+REV_STRENGTHS
+Weaknesses:
+REV_WEAKNESSES
+REV_PROSE_SECOND
+
+Other comments:
+REV_DETAILS
+REV_CLOSING
+}
+
+REV_OPENING=text
+REV_OPENING REV_OPEN_VERDICT REV_OPEN_FOLLOW
+
+REV_PROSE_CONCERN=text
+REV_PROSE_CONCERN REV_MAIN_CONCERN
+
+REV_PROSE_SECOND=text
+REV_PROSE_SECOND a note on presentation: the writing is REV_WRITING_BAD in places, particularly Section REV_SEC, and the figures would benefit from REV_FIG_FIX.
+REV_PROSE_SECOND the paper is REV_WRITING overall. the main exception is Section REV_SEC, which REV_SEC_PROBLEM.
+REV_PROSE_SECOND I also want to flag the related work: it is REV_RELWORK_BAD, and a reader unfamiliar with PAPER_THING would not learn from it how SYSNAME differs from REV_PRIOR_WORK.
+REV_PROSE_SECOND on the evaluation more generally: I would have liked to see REV_EVAL_WISH. the current experiments answer the question of whether SYSNAME works, but not REV_EVAL_QUESTION.
+
+REV_FIG_FIX error bars
+REV_FIG_FIX axis labels
+REV_FIG_FIX a consistent legend
+REV_FIG_FIX larger fonts
+
+REV_SEC_PROBLEM reads like a list of implementation details with no thread connecting them
+REV_SEC_PROBLEM introduces SCI_THING without explaining why
+REV_SEC_PROBLEM could be cut in half without losing anything
+REV_SEC_PROBLEM contradicts the abstract on what SYSNAME actually does
+
+REV_EVAL_WISH a sensitivity analysis on REV_NODES nodes
+REV_EVAL_WISH a breakdown of where the time goes
+REV_EVAL_WISH a comparison against SCI_THING
+REV_EVAL_WISH an experiment with REV_STRESS
+
+REV_EVAL_QUESTION why
+REV_EVAL_QUESTION when it stops working
+REV_EVAL_QUESTION whether the REV_BENEFIT comes from the design or from the implementation
+
+REV_Q_ITEM=text
+REV_Q_ITEM - REV_D_QUESTION
+REV_D_QUESTION!
+
+REV_CLOSING=text
+REV_CLOSING REV_CLOSE_SENTENCE REV_CLOSE_EXTRA
+
+#############################################################################
+####### Paper summary #######
+#############################################################################
+
+REV_PRESENTS presents
+REV_PRESENTS proposes
+REV_PRESENTS describes
+REV_PRESENTS introduces
+
+REV_THE_AUTHORS the authors
+REV_THE_AUTHORS the paper
+
+REV_SUM_OPEN this paper REV_PRESENTS SYSNAME, a SCI_SYSTEM for REV_TOPIC.
+REV_SUM_OPEN this paper REV_PRESENTS SYSNAME, a SCI_BUZZWORD_ADJ SCI_SYSTEM that SCI_VERBS PAPER_THING.
+REV_SUM_OPEN the authors REV_PRESENT SYSNAME, a new SCI_SYSTEM for REV_TOPIC.
+REV_SUM_OPEN the paper takes up REV_TOPIC and proposes SYSNAME, a SCI_SYSTEM that SCI_VERBS PAPER_THING using SCI_BUZZWORD_ADJ SCI_BUZZWORD_NOUN.
+REV_SUM_OPEN the paper argues that PAPER_THING and SCI_THING, LIT_ALTHOUGH usually treated separately, can be SCI_VERBED together, and presents SYSNAME as evidence.
+REV_SUM_OPEN this paper makes the case that PAPER_THING SCI_CAN be SCI_VERBED with SCI_BUZZWORD_ADJ SCI_BUZZWORD_NOUN, and describes SYSNAME, a SCI_SYSTEM that attempts this.
+REV_SUM_OPEN the submission addresses REV_TOPIC. the proposed SCI_SYSTEM, SYSNAME, SCI_VERBS PAPER_THING in the context of PAPER_FIELD.
+REV_SUM_OPEN "PAPER_TITLE" REV_PRESENTS SYSNAME, a SCI_SYSTEM for REV_TOPIC.
+REV_SUM_OPEN the authors observe that PAPER_SUBJECT PAPER_ARE_HARD, and propose SYSNAME, a SCI_BUZZWORD_ADJ SCI_SYSTEM that SCI_VERBS PAPER_THING.
+
+REV_PRESENT present
+REV_PRESENT propose
+REV_PRESENT describe
+
+PAPER_ARE_HARD PAPER_IS_ARE poorly understood
+PAPER_ARE_HARD PAPER_IS_ARE hard to SCI_VERB at scale
+PAPER_ARE_HARD PAPER_IS_ARE rarely SCI_VERBED in practice
+PAPER_ARE_HARD PAPER_HAS_HAVE not been studied together with SCI_THING
+
+REV_IS_ARE+3 are
+REV_IS_ARE is
+REV_HAS_HAVE+3 have
+REV_HAS_HAVE has
+
+REV_TOPIC+4 SCI_VERBING PAPER_THING
+REV_TOPIC+2 the SCI_VERBION of PAPER_THING
+REV_TOPIC+2 PAPER_THING in PAPER_FIELD
+REV_TOPIC SCI_BUZZWORD_ADJ PAPER_THING
+REV_TOPIC SCI_VERBING PAPER_THING with SCI_BUZZWORD_ADJ SCI_BUZZWORD_NOUN
+REV_TOPIC the SCI_ADJ unification of PAPER_THING and SCI_THING
+
+REV_SUM_CONTEXT the motivation is that REV_PRIOR SCI_SYSTEM_PL for PAPER_THING REV_PRIOR_FLAW.
+REV_SUM_CONTEXT the authors argue that existing approaches to PAPER_THING REV_PRIOR_FLAW, which motivates a SCI_BUZZWORD_ADJ design.
+REV_SUM_CONTEXT the paper is motivated by the observation that PAPER_SUBJECT PAPER_ARE_HARD, and that REV_PRIOR SCI_SYSTEM_PL REV_PRIOR_FLAW.
+REV_SUM_CONTEXT the introduction argues that the SCI_VERBION of PAPER_THING has been held back because REV_PRIOR SCI_SYSTEM_PL REV_PRIOR_FLAW.
+
+REV_PRIOR_FLAW either require SCI_THING or do not scale
+REV_PRIOR_FLAW assume SCI_BUZZWORD_ADJ SCI_BUZZWORD_NOUN that are rarely available
+REV_PRIOR_FLAW sacrifice EVAL_MEASUREMENT_UM for EVAL_MEASUREMENT_UM
+REV_PRIOR_FLAW do not handle SCI_THING
+REV_PRIOR_FLAW are too SCI_ADJ to deploy
+
+REV_SUM_APPROACH the key idea is to REV_KEY_IDEA.
+REV_SUM_APPROACH the central observation is that SCI_THING REV_OBSERVATION, which lets SYSNAME REV_SYS_GAIN.
+REV_SUM_APPROACH SYSNAME is built on PAPER_THING and SCI_THING, and REV_SYS_GAINS.
+REV_SUM_APPROACH rather than SCI_VERBING SCI_THING directly, SYSNAME REV_INSTEAD.
+REV_SUM_APPROACH the design combines SCI_BUZZWORD_ADJ SCI_BUZZWORD_NOUN with SCI_THING; the authors argue that this REV_SYS_GAINS.
+REV_SUM_APPROACH the approach is to REV_KEY_IDEA, so that SYSNAME REV_SYS_GAINS.
+
+REV_SUM_APPROACH_MORE the paper also gives REV_ALSO_GIVES.
+REV_SUM_APPROACH_MORE Section REV_SEC discusses REV_ALSO_GIVES.
+REV_SUM_APPROACH_MORE a secondary contribution is REV_ALSO_GIVES.
+
+REV_ALSO_GIVES a SCI_ADJ analysis of SYSNAME's SCI_COMPLEXNOUN
+REV_ALSO_GIVES an argument that SYSNAME is SCI_MATH_ADJ under SCI_MATH_ADJ workloads
+REV_ALSO_GIVES a discussion of how SYSNAME relates to SCI_THING
+REV_ALSO_GIVES a proof sketch that SYSNAME is SCI_BUZZWORD_ADJ
+
+REV_KEY_IDEA treat PAPER_THING as SCI_BUZZWORD_ADJ SCI_BUZZWORD_NOUN
+REV_KEY_IDEA use SCI_THING to SCI_VERB PAPER_THING
+REV_KEY_IDEA decouple PAPER_THING from SCI_THING
+REV_KEY_IDEA SCI_VERB PAPER_THING and SCI_THING simultaneously
+REV_KEY_IDEA replace SCI_THING with a SCI_BUZZWORD_ADJ SCI_SYSTEM based on SCI_THING
+REV_KEY_IDEA apply SCI_FIELD to the SCI_VERBION of PAPER_THING
+
+REV_OBSERVATION can be made SCI_BUZZWORD_ADJ
+REV_OBSERVATION and PAPER_THING are LIT_OFTEN SCI_MATH_ADJ
+REV_OBSERVATION need not be SCI_VERBED at all
+REV_OBSERVATION behaves like SCI_THING under SCI_MATH_ADJ workloads
+
+REV_SYS_GAIN avoid SCI_VERBING SCI_THING
+REV_SYS_GAIN SCI_SYS_VERB PAPER_THING without SCI_THING
+REV_SYS_GAIN achieve SCI_BUZZWORD_ADJ SCI_BUZZWORD_NOUN
+REV_SYS_GAIN improve EVAL_MEASUREMENT_UM
+
+REV_SYS_GAINS avoids SCI_VERBING SCI_THING
+REV_SYS_GAINS SCI_SYS_VERBS PAPER_THING without SCI_THING
+REV_SYS_GAINS achieves SCI_BUZZWORD_ADJ SCI_BUZZWORD_NOUN
+REV_SYS_GAINS improves EVAL_MEASUREMENT_UM
+REV_SYS_GAINS makes PAPER_THING SCI_BUZZWORD_ADJ
+
+REV_SYS_VERBS_3 locates
+REV_SYS_VERBS_3 stores
+REV_SYS_VERBS_3 caches
+REV_SYS_VERBS_3 manages
+REV_SYS_VERBS_3 controls
+SCI_SYS_VERBS+3 REV_SYS_VERBS_3
+
+REV_INSTEAD SCI_VERBS PAPER_THING and lets SCI_THING follow
+REV_INSTEAD relies on SCI_BUZZWORD_ADJ SCI_BUZZWORD_NOUN to SCI_SYS_VERB PAPER_THING
+REV_INSTEAD SCI_VERBS SCI_THING as a proxy for PAPER_THING
+
+REV_SUM_IMPL the authors implemented a prototype in about REV_LOC lines of LANGUAGE_UM.
+REV_SUM_IMPL a prototype (REV_LOC lines of LANGUAGE_UM, running on OSNAME) is described in Section REV_SEC.
+REV_SUM_IMPL the implementation is REV_LOC lines of LANGUAGE_UM and a small OSNAME kernel patch.
+REV_SUM_IMPL the prototype is built on top of SCI_THING.
+
+REV_SUM_EVAL the evaluation, on a REV_NODES-node REV_TESTBED, measures EVAL_MEASUREMENT_UM and EVAL_MEASUREMENT_UM against REV_NBASE baselines and reports REV_RESULT.
+REV_SUM_EVAL experiments on a REV_NODES-node REV_TESTBED show REV_RESULT.
+REV_SUM_EVAL the evaluation compares SYSNAME with REV_NBASE REV_PRIOR SCI_SYSTEM_PL on EVAL_MEASUREMENT_UM and REV_REPORTS REV_RESULT.
+REV_SUM_EVAL the authors evaluate SYSNAME REV_HOW_EVAL and REV_REPORT REV_RESULT.
+REV_SUM_EVAL Section REV_SEC evaluates the prototype REV_HOW_EVAL, focusing on EVAL_MEASUREMENT_UM.
+
+REV_HOW_EVAL in simulation
+REV_HOW_EVAL on a REV_NODES-node REV_TESTBED
+REV_HOW_EVAL with a synthetic workload
+REV_HOW_EVAL using REV_TRACES traces
+
+REV_TRACES SCI_THING
+REV_TRACES REV_MEASURABLE
+
+REV_MEASURABLE web server
+REV_MEASURABLE DNS
+REV_MEASURABLE database
+REV_MEASURABLE e-mail
+REV_MEASURABLE file system
+
+REV_TESTBED cluster
+REV_TESTBED cluster
+REV_TESTBED testbed
+REV_TESTBED PlanetLab deployment
+REV_TESTBED sensor network
+REV_TESTBED emulated network
+
+REV_REPORTS reports
+REV_REPORTS finds
+REV_REPORTS claims
+REV_REPORT report
+REV_REPORT find
+REV_REPORT claim
+
+REV_PRIOR prior
+REV_PRIOR existing
+REV_PRIOR earlier
+
+REV_NBASE two
+REV_NBASE two
+REV_NBASE three
+
+REV_RESULT a REV_PCT improvement in EVAL_MEASUREMENT_UM
+REV_RESULT REV_PCT REV_LOWER EVAL_MEASUREMENT_UM than SCI_THING
+REV_RESULT that SYSNAME scales to REV_NODES nodes with REV_SMALL_PCT overhead
+REV_RESULT that SYSNAME REV_MATCHES the baselines while using REV_PCT less REV_RESOURCE
+REV_RESULT that EVAL_MEASUREMENT_UM improves by a factor of REV_FACTOR
+
+REV_MATCHES matches
+REV_MATCHES outperforms
+REV_MATCHES is competitive with
+
+REV_RESOURCE memory
+REV_RESOURCE bandwidth
+REV_RESOURCE energy
+REV_RESOURCE disk space
+REV_RESOURCE CPU time
+
+REV_LOWER lower
+REV_LOWER higher
+REV_LOWER better
+
+REV_SUM_CLOSE the authors conclude that PAPER_THING REV_CONCLUSION.
+REV_SUM_CLOSE the paper's main claim is that SYSNAME REV_MAIN_CLAIM.
+REV_SUM_CLOSE the paper closes with a discussion of REV_FUTURE.
+
+REV_CONCLUSION can be made SCI_BUZZWORD_ADJ and SCI_BUZZWORD_ADJ
+REV_CONCLUSION and SCI_THING are not in fact at odds
+REV_CONCLUSION should be SCI_VERBED using SCI_BUZZWORD_ADJ SCI_BUZZWORD_NOUN
+
+REV_MAIN_CLAIM is the first SCI_BUZZWORD_ADJ SCI_SYSTEM for PAPER_THING
+REV_MAIN_CLAIM makes SCI_BUZZWORD_ADJ SCI_BUZZWORD_NOUN practical
+REV_MAIN_CLAIM is SCI_MATH_ADJ, SCI_BUZZWORD_ADJ, and SCI_BUZZWORD_ADJ
+
+REV_FUTURE future work on SCI_THING
+REV_FUTURE limitations and possible extensions to SCI_THING
+REV_FUTURE how SYSNAME might be applied to SCI_THING
+
+#############################################################################
+####### Opening and closing #######
+#############################################################################
+
+# REV_OPEN_VERDICT is defined per merit section; REV_OPEN_FOLLOW per tone.
+
+REV_TIMELY timely
+REV_TIMELY interesting
+REV_TIMELY important
+REV_TIMELY well motivated
+REV_TIMELY relevant
+REV_TIMELY worthwhile
+
+REV_WRITING generally clear
+REV_WRITING easy to follow
+REV_WRITING readable
+REV_WRITING well organized
+
+REV_WRITING_BAD hard to follow
+REV_WRITING_BAD uneven
+REV_WRITING_BAD dense
+REV_WRITING_BAD occasionally confusing
+
+REV_CENTRAL_CLAIM central claim
+REV_CENTRAL_CLAIM main result
+REV_CENTRAL_CLAIM claimed REV_BENEFIT
+REV_CENTRAL_CLAIM conclusions
+
+REV_BENEFIT improvement
+REV_BENEFIT benefit
+REV_BENEFIT speedup
+REV_BENEFIT gain
+
+#############################################################################
+####### Strengths #######
+#############################################################################
+
+REV_S_ITEM=text
+REV_S_ITEM - REV_S_BODY
+
+REV_S_BODY!
+REV_S_BODY+2 REV_S_GENERIC
+REV_S_BODY REV_S_LEVEL
+
+REV_S_GENERIC the problem is REV_TIMELY, and the introduction motivates it well.
+REV_S_GENERIC the observation that PAPER_THING and SCI_THING are rarely studied together is a fair one, and the paper makes something of it.
+REV_S_GENERIC the design of SYSNAME is simple and the paper explains it clearly in Section REV_SEC.
+REV_S_GENERIC the implementation appears to be real, and the authors ran it at a non-trivial scale.
+REV_S_GENERIC the evaluation covers EVAL_MEASUREMENT_UM as well as EVAL_MEASUREMENT_UM, which is more than most papers in this area do.
+REV_S_GENERIC the paper is REV_WRITING and the figures are clear.
+REV_S_GENERIC the idea of REV_KEY_IDEA_ING is, as far as I know, new.
+REV_S_GENERIC the comparison against SCI_THING in Figure REV_FIG is convincing.
+REV_S_GENERIC the authors are candid about the limitations of SYSNAME in Section REV_SEC.
+REV_S_GENERIC the results in Figure REV_FIG are striking if they hold up.
+REV_S_GENERIC the treatment of SCI_THING in Section REV_SEC is more careful than usual.
+REV_S_GENERIC the paper takes a clear position and defends it.
+REV_S_GENERIC the case study in Section REV_SEC is a nice touch.
+
+REV_KEY_IDEA_ING treating PAPER_THING as SCI_BUZZWORD_ADJ SCI_BUZZWORD_NOUN
+REV_KEY_IDEA_ING using SCI_THING to SCI_VERB PAPER_THING
+REV_KEY_IDEA_ING decoupling PAPER_THING from SCI_THING
+REV_KEY_IDEA_ING applying SCI_FIELD to PAPER_THING
+
+#############################################################################
+####### Weaknesses #######
+#############################################################################
+
+REV_W_EVAL=text
+REV_W_EVAL - REV_W_EVAL_BODY
+REV_W_NOVELTY=text
+REV_W_NOVELTY - REV_W_NOVELTY_BODY
+REV_W_CLARITY=text
+REV_W_CLARITY - REV_W_CLARITY_BODY
+REV_W_OVERCLAIM=text
+REV_W_OVERCLAIM - REV_W_OVERCLAIM_BODY
+REV_W_DESIGN=text
+REV_W_DESIGN - REV_W_DESIGN_BODY
+REV_W_REPRO=text
+REV_W_REPRO - REV_W_REPRO_BODY
+REV_W_LEVEL=text
+REV_W_LEVEL - REV_W_LEVEL_BODY
+
+REV_W_EVAL_BODY the comparison in Figure REV_FIG is against systems from SCI_YEAR and SCI_YEAR. REV_W_EVAL_MODERN
+REV_W_EVAL_BODY all results are REV_STAT of REV_RUNS runs, but no variance is reported. Figure REV_FIG looks noisy, and the gap between SYSNAME and the closest baseline REV_W_EVAL_NOISE
+REV_W_EVAL_BODY the workload is synthetic. REV_W_EVAL_WORKLOAD
+REV_W_EVAL_BODY the evaluation measures EVAL_MEASUREMENT_UM but never EVAL_MEASUREMENT_UM, which is REV_W_EVAL_METRIC
+REV_W_EVAL_BODY the largest experiment uses REV_NODES nodes. REV_W_EVAL_SCALE
+REV_W_EVAL_BODY the baselines are not tuned; Section REV_SUBSEC admits that SCI_THING was run with default settings. REV_W_EVAL_TUNE
+
+REV_STAT medians
+REV_STAT means
+REV_STAT averages
+
+REV_W_EVAL_MODERN the related work mentions several more recent approaches, none of which is evaluated. REV_TONE_EVAL_CONSEQ
+REV_W_EVAL_MODERN REV_TONE_EVAL_CONSEQ
+
+REV_W_EVAL_NOISE is within what I would expect from run-to-run variation. REV_TONE_EVAL_CONSEQ
+REV_W_EVAL_NOISE may not be significant. REV_TONE_EVAL_CONSEQ
+
+REV_W_EVAL_WORKLOAD some justification that it resembles real REV_MEASURABLE traffic would help, or better, a trace-driven experiment. REV_TONE_EVAL_CONSEQ
+REV_W_EVAL_WORKLOAD it is not clear that the REV_PCT REV_BENEFIT in Figure REV_FIG would survive contact with a real workload. REV_TONE_EVAL_CONSEQ
+
+REV_W_EVAL_METRIC the metric that matters for PAPER_THING. REV_TONE_EVAL_CONSEQ
+REV_W_EVAL_METRIC what the introduction says SYSNAME is designed to improve. REV_TONE_EVAL_CONSEQ
+
+REV_W_EVAL_SCALE the introduction promises SCI_BUZZWORD_ADJ SCI_BUZZWORD_NOUN, and it is hard to know from this whether SYSNAME scales beyond a single rack. REV_TONE_EVAL_CONSEQ
+REV_W_EVAL_SCALE is that a limitation of the testbed or of SYSNAME? REV_TONE_EVAL_CONSEQ
+
+REV_W_EVAL_TUNE REV_TONE_EVAL_CONSEQ
+
+REV_W_NOVELTY_BODY the relationship to REV_PRIOR work on SCI_THING is not made clear. REV_TONE_NOVELTY_CONSEQ
+REV_W_NOVELTY_BODY the core mechanism looks similar to REV_PRIOR_WORK. the paper cites it but does not explain what is different. REV_TONE_NOVELTY_CONSEQ
+REV_W_NOVELTY_BODY the related work section is REV_RELWORK_BAD. in particular, REV_PRIOR_WORK REV_SEEMS_RELEVANT. REV_TONE_NOVELTY_CONSEQ
+REV_W_NOVELTY_BODY much of Section REV_SEC restates well-known properties of SCI_THING. REV_TONE_NOVELTY_CONSEQ
+
+REV_RELWORK_BAD thin
+REV_RELWORK_BAD a list of citations with no discussion
+REV_RELWORK_BAD missing recent work
+REV_RELWORK_BAD confined to SCI_FIELD
+
+REV_SEEMS_RELEVANT seems directly relevant
+REV_SEEMS_RELEVANT addresses the same problem
+REV_SEEMS_RELEVANT should be discussed
+
+REV_PRIOR_WORK the SCI_SYSTEM of SCI_SOURCE et al. (CITE_CONF_NAME SCI_YEAR)
+REV_PRIOR_WORK SCI_SOURCE's work on SCI_THING
+REV_PRIOR_WORK a SCI_YEAR paper at CITE_CONF_NAME on SCI_BUZZWORD_ADJ SCI_THING
+REV_PRIOR_WORK the SCI_STATUS_ADJ SCI_SYSTEM by SCI_SOURCE
+
+REV_W_CLARITY_BODY the paper never defines what "REV_UNDEFINED" means operationally. Section REV_SEC describes the architecture, but I could not tell REV_COULD_NOT_TELL. REV_TONE_CLARITY_CONSEQ
+REV_W_CLARITY_BODY Section REV_SEC is REV_WRITING_BAD. it took me REV_READS readings to understand REV_COULD_NOT_TELL_WHAT. REV_TONE_CLARITY_CONSEQ
+REV_W_CLARITY_BODY the paper alternates between calling the system SYSNAME, "the SCI_SYSTEM," and "our SCI_APPROACH," and I was sometimes unsure whether these are the same thing. REV_TONE_CLARITY_CONSEQ
+REV_W_CLARITY_BODY Figure REV_FIG is referenced before it is explained, and the text in Section REV_SEC does not match REV_ITS_LABELS. REV_TONE_CLARITY_CONSEQ
+
+REV_UNDEFINED SCI_BUZZWORD_ADJ
+REV_UNDEFINED SCI_VERBING PAPER_THING
+REV_UNDEFINED decoupling
+REV_UNDEFINED SCI_BUZZWORD_ADJ SCI_BUZZWORD_NOUN
+
+REV_COULD_NOT_TELL which component enforces the separation or what breaks if it is removed
+REV_COULD_NOT_TELL how SYSNAME handles SCI_THING
+REV_COULD_NOT_TELL where PAPER_SUBJECT PAPER_IS_ARE actually used
+REV_COULD_NOT_TELL what happens when SCI_THING fails
+
+REV_COULD_NOT_TELL_WHAT how SYSNAME handles SCI_THING
+REV_COULD_NOT_TELL_WHAT the role of SCI_THING in the design
+REV_COULD_NOT_TELL_WHAT what Figure REV_FIG is showing
+
+REV_READS two
+REV_READS three
+REV_READS several
+
+REV_ITS_LABELS its axis labels
+REV_ITS_LABELS its caption
+REV_ITS_LABELS the legend
+
+REV_W_OVERCLAIM_BODY the abstract says "REV_OVERCLAIM_QUOTE," which overstates what the evaluation shows. REV_TONE_OVERCLAIM_CONSEQ
+REV_W_OVERCLAIM_BODY the introduction claims that SYSNAME REV_MAIN_CLAIM, but the evaluation only shows REV_RESULT. REV_TONE_OVERCLAIM_CONSEQ
+REV_W_OVERCLAIM_BODY the paper repeatedly asserts that PAPER_SUBJECT PAPER_ARE_HARD without citing evidence. REV_TONE_OVERCLAIM_CONSEQ
+
+REV_OVERCLAIM_QUOTE the solution to all of these SCI_PROBLEM_PL
+REV_OVERCLAIM_QUOTE few SCI_PEOPLE would disagree
+REV_OVERCLAIM_QUOTE the first SCI_SYSTEM of its kind
+REV_OVERCLAIM_QUOTE SCI_ADJ_ADV SCI_ADJ
+
+REV_W_DESIGN_BODY SYSNAME assumes that SCI_THING REV_ASSUMPTION. this is REV_ASSUMPTION_BAD, and the paper does not discuss what happens otherwise. REV_TONE_DESIGN_CONSEQ
+REV_W_DESIGN_BODY the design depends on SCI_THING, but Section REV_SEC never says how SCI_THING REV_IS_ARE obtained. REV_TONE_DESIGN_CONSEQ
+REV_W_DESIGN_BODY it is not clear how SYSNAME behaves under REV_STRESS. the design in Section REV_SEC seems to assume the common case. REV_TONE_DESIGN_CONSEQ
+REV_W_DESIGN_BODY the choice of SCI_THING over SCI_THING is never justified. REV_TONE_DESIGN_CONSEQ
+
+REV_ASSUMPTION REV_IS_ARE SCI_BUZZWORD_ADJ
+REV_ASSUMPTION never REV_FAILS
+REV_ASSUMPTION REV_IS_ARE trusted
+
+REV_FAILS fails
+REV_FAILS changes
+REV_FAILS overflows
+
+REV_ASSUMPTION_BAD not true in practice
+REV_ASSUMPTION_BAD a strong assumption
+REV_ASSUMPTION_BAD unrealistic for PAPER_THING
+
+REV_STRESS failures
+REV_STRESS churn
+REV_STRESS a SCI_MATH_ADJ workload
+REV_STRESS adversarial input
+REV_STRESS contention
+
+REV_W_REPRO_BODY there is not enough detail to reproduce the experiments: the paper does not say REV_MISSING_DETAIL. REV_TONE_REPRO_CONSEQ
+REV_W_REPRO_BODY the hardware description in Section REV_SUBSEC is incomplete (REV_MISSING_DETAIL). REV_TONE_REPRO_CONSEQ
+REV_W_REPRO_BODY the source code is not available, and the description of the REV_LOC-line prototype is too brief to reimplement. REV_TONE_REPRO_CONSEQ
+
+REV_MISSING_DETAIL what version of OSNAME was used
+REV_MISSING_DETAIL how many runs each point represents
+REV_MISSING_DETAIL how the REV_NODES nodes were connected
+REV_MISSING_DETAIL how the workload was generated
+REV_MISSING_DETAIL what the baseline was configured to do
+
+#############################################################################
+####### Detailed comments #######
+#############################################################################
+
+REV_D_ITEM=text
+REV_D_ITEM - REV_D_BODY
+
+REV_D_BODY!
+REV_D_BODY REV_D_TYPO
+REV_D_BODY REV_D_FIGURE
+REV_D_BODY REV_D_QUESTION
+REV_D_BODY REV_D_TERM
+REV_D_BODY REV_D_CITE
+REV_D_BODY REV_D_PRESENTATION
+
+REV_D_TYPO typos: "REV_MISSPELLED" (page REV_PAGE), "REV_MISSPELLED" (page REV_PAGE).
+REV_D_TYPO page REV_PAGE: REV_TYPO_PAIR.
+REV_D_TYPO there are a number of typos; I noticed "REV_MISSPELLED" on page REV_PAGE.
+REV_D_TYPO the paper uses both REV_SPELL_PAIR.
+
+REV_MISSPELLED hetrogeneous
+REV_MISSPELLED epistemologies
+REV_MISSPELLED recieve
+REV_MISSPELLED occured
+REV_MISSPELLED seperate
+REV_MISSPELLED ambimorphic
+REV_MISSPELLED psychoacoustic
+REV_MISSPELLED omniscient
+REV_MISSPELLED cyberinformaticians
+REV_MISSPELLED millenium
+REV_MISSPELLED it's
+
+REV_TYPO_PAIR "hetrogeneous" should be "heterogeneous"
+REV_TYPO_PAIR "recieve" should be "receive"
+REV_TYPO_PAIR "occured" should be "occurred"
+REV_TYPO_PAIR "seperate" should be "separate"
+REV_TYPO_PAIR "it's" should be "its"
+REV_TYPO_PAIR "comprised of" should be "composed of"
+
+REV_SPELL_PAIR "e-mail" and "email"
+REV_SPELL_PAIR "data base" and "database"
+REV_SPELL_PAIR "web" and "Web"
+REV_SPELL_PAIR "Wi-Fi" and "WiFi"
+REV_SPELL_PAIR "run-time" and "runtime"
+
+REV_D_FIGURE Figure REV_FIG has no y-axis label.
+REV_D_FIGURE Figure REV_FIG: the legend covers part of the data.
+REV_D_FIGURE Figure REV_FIG uses a log scale on one axis but not the other; please say so in the caption.
+REV_D_FIGURE the lines in Figure REV_FIG are indistinguishable in black and white.
+REV_D_FIGURE Figure REV_FIG: what are the units of the y-axis?
+REV_D_FIGURE the caption of Figure REV_FIG describes a different experiment than the one in the text.
+REV_D_FIGURE Figures REV_FIG_LO and REV_FIG_HI appear to show the same data.
+
+REV_D_QUESTION Section REV_SUBSEC: why REV_NODES nodes? does SYSNAME scale beyond this?
+REV_D_QUESTION Section REV_SEC: how does SYSNAME handle SCI_THING?
+REV_D_QUESTION page REV_PAGE, "SCI_ADJ_ADV": this is asserted rather than shown.
+REV_D_QUESTION Section REV_SEC: is the SCI_BUZZWORD_ADJ SCI_BUZZWORD_NOUN essential, or would SCI_THING work as well?
+REV_D_QUESTION what happens to the results in Figure REV_FIG if SCI_THING REV_IS_ARE removed?
+REV_D_QUESTION Section REV_SUBSEC mentions a REV_PCT overhead. where does it come from?
+REV_D_QUESTION the paper says the prototype is REV_LOC lines of LANGUAGE_UM. how much of that is SYSNAME itself?
+
+REV_D_TERM the term "SCI_BUZZWORD_ADJ" is used in two different senses in Sections REV_SEC_LO and REV_SEC_HI.
+REV_D_TERM "SCI_BUZZWORD_NOUN" is never defined.
+REV_D_TERM please define "SCI_BUZZWORD_ADJ SCI_BUZZWORD_NOUN" on first use.
+REV_D_TERM SYSNAME is sometimes written in italics and sometimes not.
+
+REV_D_CITE the citation for SCI_THING on page REV_PAGE seems to be the wrong one.
+REV_D_CITE reference [REV_REFNUM] is incomplete.
+REV_D_CITE several references are missing venues or years.
+REV_D_CITE the paper cites SCI_SOURCE for SCI_THING, which is not what that paper is about.
+
+REV_D_PRESENTATION the abstract says "REV_OVERCLAIM_QUOTE," which overstates what the evaluation shows.
+REV_D_PRESENTATION the introduction spends a page on SCI_THING, which is not used later.
+REV_D_PRESENTATION Section REV_SEC could be shortened; most of it is background.
+REV_D_PRESENTATION the conclusion repeats the abstract almost verbatim.
+REV_D_PRESENTATION the roadmap paragraph at the end of the introduction is unnecessary.
+
+REV_REFNUM 3
+REV_REFNUM 7
+REV_REFNUM 12
+REV_REFNUM 15
+REV_REFNUM 21
+
+#############################################################################
+####### Numbers #######
+#############################################################################
+
+REV_PAGE 1
+REV_PAGE 2
+REV_PAGE 2
+REV_PAGE 3
+REV_PAGE 3
+REV_PAGE 4
+REV_PAGE 4
+REV_PAGE 5
+REV_PAGE 5
+REV_PAGE 6
+
+REV_SEC 2
+REV_SEC 3
+REV_SEC 3
+REV_SEC 4
+REV_SEC 4
+REV_SEC 5
+
+REV_SEC_LO 2
+REV_SEC_LO 3
+REV_SEC_HI 4
+REV_SEC_HI 5
+
+REV_SUBSEC REV_SEC.REV_SUBNUM
+REV_SUBNUM 1
+REV_SUBNUM 2
+REV_SUBNUM 2
+REV_SUBNUM 3
+
+REV_FIG 1
+REV_FIG 2
+REV_FIG 2
+REV_FIG 3
+REV_FIG 3
+REV_FIG 4
+REV_FIG 5
+
+REV_FIG_MAIN.
+REV_FIG_MAIN REV_FIG
+
+REV_FIG_LO 1
+REV_FIG_LO 2
+REV_FIG_HI 3
+REV_FIG_HI 4
+
+REV_LOC 650
+REV_LOC 900
+REV_LOC 1,200
+REV_LOC 2,500
+REV_LOC 3,000
+REV_LOC 4,100
+REV_LOC 7,800
+REV_LOC 11,000
+
+REV_NODES 4
+REV_NODES 8
+REV_NODES 16
+REV_NODES 32
+REV_NODES 40
+REV_NODES 64
+REV_NODES 128
+
+REV_PCT 12%
+REV_PCT 18%
+REV_PCT 23%
+REV_PCT 31%
+REV_PCT 40%
+REV_PCT 2x
+REV_PCT 3x
+REV_PCT 15%
+
+REV_SMALL_PCT 3%
+REV_SMALL_PCT 5%
+REV_SMALL_PCT 8%
+REV_SMALL_PCT under 10%
+
+REV_FACTOR 1.8
+REV_FACTOR 2
+REV_FACTOR 3
+REV_FACTOR 4.5
+
+REV_RUNS five
+REV_RUNS ten
+REV_RUNS twenty
+
+#############################################################################
+####### Tone: merit groups #######
+#############################################################################
+
+[negative]
+
+REV_OPEN_FOLLOW the problem is REV_TIMELY and the paper is REV_WRITING, but I was not convinced that the evaluation supports the REV_CENTRAL_CLAIM.
+REV_OPEN_FOLLOW the paper addresses a REV_TIMELY problem, but the contribution over REV_PRIOR work is unclear and the evaluation is not convincing.
+REV_OPEN_FOLLOW I found the paper REV_WRITING_BAD, and after REV_READS readings I still do not understand what SYSNAME actually does differently from SCI_THING.
+REV_OPEN_FOLLOW the idea has some appeal, but the paper in its current form does not make the case for it.
+REV_OPEN_FOLLOW there may be a good paper here, but this is not it yet: the design is underspecified and the evaluation does not test the REV_CENTRAL_CLAIM.
+
+REV_MAIN_CONCERN my main concern is that the REV_CENTRAL_CLAIM rests entirely on Figure REV_FIG_MAIN, and Figure REV_FIG_MAIN compares SYSNAME with REV_NBASE baselines that REV_BASELINE_PROBLEM.
+REV_MAIN_CONCERN my main concern is novelty. REV_PRIOR_WORK REV_SEEMS_RELEVANT, and the paper does not explain what SYSNAME adds beyond it.
+REV_MAIN_CONCERN the biggest problem is that the paper does not say precisely what SYSNAME is. Section REV_SEC_LO describes it as a SCI_SYSTEM, Section REV_SEC_HI as a SCI_SYSTEM, and the evaluation treats it as a SCI_SYSTEM.
+
+REV_BASELINE_PROBLEM were run with default settings
+REV_BASELINE_PROBLEM are not designed for PAPER_THING
+REV_BASELINE_PROBLEM predate SCI_THING entirely
+REV_BASELINE_PROBLEM the authors implemented themselves
+
+REV_STRENGTHS {
+REV_S_ITEM
+}
+REV_STRENGTHS {
+REV_S_ITEM
+REV_S_ITEM
+}
+
+REV_WEAKNESSES {
+REV_W_CLARITY
+REV_W_EVAL
+REV_W_NOVELTY
+REV_W_LEVEL
+}
+REV_WEAKNESSES {
+REV_W_NOVELTY
+REV_W_EVAL
+REV_W_OVERCLAIM
+REV_W_LEVEL
+}
+REV_WEAKNESSES {
+REV_W_EVAL
+REV_W_DESIGN
+REV_W_LEVEL
+REV_W_REPRO
+}
+REV_WEAKNESSES {
+REV_W_DESIGN
+REV_W_EVAL
+REV_W_CLARITY
+REV_W_LEVEL
+REV_W_REPRO
+}
+REV_WEAKNESSES {
+REV_W_LEVEL
+REV_W_EVAL
+REV_W_REPRO
+REV_W_OVERCLAIM
+REV_W_DESIGN
+}
+REV_WEAKNESSES {
+REV_W_NOVELTY
+REV_W_DESIGN
+REV_W_EVAL
+REV_W_LEVEL
+}
+
+REV_DETAILS {
+REV_D_ITEM
+REV_D_ITEM
+REV_D_ITEM
+REV_D_ITEM
+}
+REV_DETAILS {
+REV_D_ITEM
+REV_D_ITEM
+REV_D_ITEM
+REV_D_ITEM
+REV_D_ITEM
+}
+
+REV_TONE_EVAL_CONSEQ as it stands, the REV_CENTRAL_CLAIM is not supported.
+REV_TONE_EVAL_CONSEQ this makes the claimed REV_PCT REV_BENEFIT hard to interpret.
+REV_TONE_EVAL_CONSEQ I do not think the paper can be accepted on the strength of this evaluation.
+REV_TONE_EVAL_CONSEQ 
+
+REV_TONE_NOVELTY_CONSEQ as far as I can tell, the delta is small.
+REV_TONE_NOVELTY_CONSEQ this needs to be addressed before the contribution can be assessed.
+REV_TONE_NOVELTY_CONSEQ 
+
+REV_TONE_CLARITY_CONSEQ this is a fundamental problem for a paper whose contribution is the design.
+REV_TONE_CLARITY_CONSEQ the paper needs a precise statement of the design before it can be evaluated.
+REV_TONE_CLARITY_CONSEQ 
+
+REV_TONE_OVERCLAIM_CONSEQ the claims should be scaled back to what is actually shown.
+REV_TONE_OVERCLAIM_CONSEQ 
+
+REV_TONE_DESIGN_CONSEQ this seems like a serious gap.
+REV_TONE_DESIGN_CONSEQ without this, I cannot tell whether the design is sound.
+REV_TONE_DESIGN_CONSEQ 
+
+REV_TONE_REPRO_CONSEQ this makes the results hard to trust.
+REV_TONE_REPRO_CONSEQ 
+
+REV_CLOSE_SENTENCE I would like to see a stronger evaluation and a precise statement of the design before this is ready for publication.
+REV_CLOSE_SENTENCE I recommend rejection, but I would encourage the authors to REV_ENCOURAGE and resubmit.
+REV_CLOSE_SENTENCE in summary, the paper is not ready: REV_NOT_READY.
+REV_CLOSE_SENTENCE I do not think the paper should be accepted in its current form.
+REV_CLOSE_SENTENCE the authors should REV_ENCOURAGE; with that, this could become a solid workshop paper.
+
+REV_ENCOURAGE compare against a modern baseline
+REV_ENCOURAGE clarify what SYSNAME actually contributes
+REV_ENCOURAGE rewrite Section REV_SEC
+REV_ENCOURAGE evaluate on a realistic workload
+REV_ENCOURAGE position the work against REV_PRIOR_WORK
+
+REV_NOT_READY the design is unclear and the evaluation does not support the claims
+REV_NOT_READY the contribution is too incremental for this venue
+REV_NOT_READY the evaluation would need to be redone with proper baselines
+
+REV_CLOSE_EXTRA+3 
+REV_CLOSE_EXTRA I would be happy to review a revised version.
+REV_CLOSE_EXTRA I realize this is discouraging; I do think the direction is worth pursuing.
+
+[middling]
+
+REV_OPEN_FOLLOW the problem is REV_TIMELY and the paper is REV_WRITING. the contribution is real but modest, and the evaluation leaves some questions open.
+REV_OPEN_FOLLOW the idea is clear and reasonable, but the execution is uneven.
+REV_OPEN_FOLLOW I like the idea of REV_KEY_IDEA_ING, and I think the paper is close to acceptable, but the REV_CENTRAL_CLAIM needs more support.
+REV_OPEN_FOLLOW the paper is REV_WRITING, and SYSNAME is a sensible design. I am on the fence mainly because of the evaluation.
+REV_OPEN_FOLLOW I went back and forth on this one. the idea is nice; the evaluation is not as strong as it should be.
+
+REV_MAIN_CONCERN my main question is whether the REV_PCT REV_BENEFIT in Figure REV_FIG is due to SYSNAME or to REV_ALTERNATIVE_EXPLANATION.
+REV_MAIN_CONCERN my main reservation is about novelty: REV_PRIOR_WORK REV_SEEMS_RELEVANT, and the paper should say clearly what is new.
+REV_MAIN_CONCERN the paper would be much stronger with a clear statement, early on, of what SYSNAME does that SCI_THING cannot.
+
+REV_ALTERNATIVE_EXPLANATION the baseline configuration
+REV_ALTERNATIVE_EXPLANATION the choice of workload
+REV_ALTERNATIVE_EXPLANATION the extra REV_RESOURCE SYSNAME uses
+
+REV_STRENGTHS {
+REV_S_ITEM
+REV_S_ITEM
+}
+REV_STRENGTHS {
+REV_S_ITEM
+REV_S_ITEM
+REV_S_ITEM
+}
+
+REV_WEAKNESSES {
+REV_W_EVAL
+REV_W_NOVELTY
+REV_W_LEVEL
+}
+REV_WEAKNESSES {
+REV_W_EVAL
+REV_W_CLARITY
+REV_W_LEVEL
+REV_W_REPRO
+}
+REV_WEAKNESSES {
+REV_W_DESIGN
+REV_W_EVAL
+REV_W_LEVEL
+}
+REV_WEAKNESSES {
+REV_W_LEVEL
+REV_W_OVERCLAIM
+REV_W_EVAL
+REV_W_REPRO
+}
+REV_WEAKNESSES {
+REV_W_NOVELTY
+REV_W_REPRO
+REV_W_LEVEL
+}
+
+REV_DETAILS {
+REV_D_ITEM
+REV_D_ITEM
+REV_D_ITEM
+REV_D_ITEM
+}
+REV_DETAILS {
+REV_D_ITEM
+REV_D_ITEM
+REV_D_ITEM
+REV_D_ITEM
+REV_D_ITEM
+}
+
+REV_TONE_EVAL_CONSEQ this would be easy to fix and would make the result much more convincing.
+REV_TONE_EVAL_CONSEQ this does not invalidate the result, but it weakens it.
+REV_TONE_EVAL_CONSEQ 
+
+REV_TONE_NOVELTY_CONSEQ a paragraph in the related work would settle this.
+REV_TONE_NOVELTY_CONSEQ 
+
+REV_TONE_CLARITY_CONSEQ a short overview at the start of Section REV_SEC would help.
+REV_TONE_CLARITY_CONSEQ 
+
+REV_TONE_OVERCLAIM_CONSEQ please tone this down.
+REV_TONE_OVERCLAIM_CONSEQ 
+
+REV_TONE_DESIGN_CONSEQ a sentence or two would suffice.
+REV_TONE_DESIGN_CONSEQ 
+
+REV_TONE_REPRO_CONSEQ 
+
+REV_CLOSE_SENTENCE overall, this is a borderline paper: the idea is worthwhile, but the authors should REV_ENCOURAGE before it is published.
+REV_CLOSE_SENTENCE I could go either way on this paper. if accepted, the authors should REV_ENCOURAGE.
+REV_CLOSE_SENTENCE this is a reasonable contribution; my score reflects the evaluation more than the idea.
+REV_CLOSE_SENTENCE I lean slightly toward acceptance, provided the authors REV_ENCOURAGE.
+
+REV_ENCOURAGE compare against a modern baseline
+REV_ENCOURAGE clarify what SYSNAME contributes beyond SCI_THING
+REV_ENCOURAGE report variance in the figures
+REV_ENCOURAGE add a realistic workload to the evaluation
+REV_ENCOURAGE tighten Section REV_SEC
+
+REV_CLOSE_EXTRA+3 
+REV_CLOSE_EXTRA I would be happy to see this at the conference if the other reviewers are more enthusiastic.
+
+[positive]
+
+REV_OPEN_FOLLOW the problem is REV_TIMELY, the design is clean, and the evaluation is thorough. I enjoyed reading it.
+REV_OPEN_FOLLOW this is a REV_WRITING paper with a clear contribution: REV_KEY_IDEA_ING turns out to work surprisingly well.
+REV_OPEN_FOLLOW the paper is REV_WRITING and makes a convincing case that PAPER_THING REV_CONCLUSION.
+REV_OPEN_FOLLOW I found this a pleasure to read. the idea is simple, the paper is honest about its limitations, and the results in Figure REV_FIG speak for themselves.
+REV_OPEN_FOLLOW SYSNAME is a nice piece of work, and the paper does a good job explaining why it works.
+
+REV_MAIN_CONCERN my only substantive concern is REV_MINOR_CONCERN; I do not think it affects the REV_CENTRAL_CLAIM.
+REV_MAIN_CONCERN the one thing I would push the authors on is REV_MINOR_CONCERN.
+REV_MAIN_CONCERN the design section could be shorter and the evaluation could be longer, but that is a matter of taste.
+
+REV_MINOR_CONCERN the lack of a comparison against SCI_THING
+REV_MINOR_CONCERN the missing error bars in Figure REV_FIG
+REV_MINOR_CONCERN the synthetic workload
+REV_MINOR_CONCERN the treatment of SCI_THING in Section REV_SEC
+
+REV_STRENGTHS {
+REV_S_ITEM
+REV_S_ITEM
+REV_S_ITEM
+REV_S_ITEM
+}
+REV_STRENGTHS {
+REV_S_ITEM
+REV_S_ITEM
+REV_S_ITEM
+REV_S_ITEM
+REV_S_ITEM
+}
+
+REV_WEAKNESSES {
+REV_W_EVAL
+}
+REV_WEAKNESSES {
+REV_W_EVAL
+REV_W_CLARITY
+}
+REV_WEAKNESSES {
+REV_W_LEVEL
+REV_W_DESIGN
+}
+REV_WEAKNESSES {
+REV_W_NOVELTY
+}
+REV_WEAKNESSES {
+REV_W_REPRO
+REV_W_LEVEL
+}
+
+REV_DETAILS {
+REV_D_ITEM
+REV_D_ITEM
+REV_D_ITEM
+REV_D_ITEM
+}
+REV_DETAILS {
+REV_D_ITEM
+REV_D_ITEM
+REV_D_ITEM
+REV_D_ITEM
+REV_D_ITEM
+}
+
+REV_TONE_EVAL_CONSEQ this is a minor point; the result is convincing anyway.
+REV_TONE_EVAL_CONSEQ a comparison against a more recent system would strengthen an already good result.
+REV_TONE_EVAL_CONSEQ worth fixing for the camera-ready.
+REV_TONE_EVAL_CONSEQ 
+
+REV_TONE_NOVELTY_CONSEQ this does not detract from the contribution, but it should be discussed.
+REV_TONE_NOVELTY_CONSEQ 
+
+REV_TONE_CLARITY_CONSEQ easily fixed.
+REV_TONE_CLARITY_CONSEQ 
+
+REV_TONE_OVERCLAIM_CONSEQ the paper does not need the hyperbole.
+REV_TONE_OVERCLAIM_CONSEQ 
+
+REV_TONE_DESIGN_CONSEQ worth a sentence in the camera-ready.
+REV_TONE_DESIGN_CONSEQ 
+
+REV_TONE_REPRO_CONSEQ 
+
+REV_CLOSE_SENTENCE I recommend acceptance. the comments above are suggestions for the camera-ready, not conditions.
+REV_CLOSE_SENTENCE this is a clear accept for me; I expect it will be one of the more talked-about papers at the conference.
+REV_CLOSE_SENTENCE overall, a solid paper that I would be happy to see at the conference.
+REV_CLOSE_SENTENCE I support accepting this paper. the authors should REV_ENCOURAGE in the final version.
+
+REV_ENCOURAGE add error bars to the figures
+REV_ENCOURAGE discuss REV_PRIOR_WORK
+REV_ENCOURAGE release the source code
+REV_ENCOURAGE tone down the abstract
+
+REV_CLOSE_EXTRA+3 
+REV_CLOSE_EXTRA nice work.
+REV_CLOSE_EXTRA please consider releasing the code.
+
+#############################################################################
+####### Tone: individual merit scores #######
+#############################################################################
+
+[merit1]
+REV_OPEN_VERDICT this paper should be rejected.
+REV_OPEN_VERDICT I do not think this paper is publishable in its current form.
+REV_OPEN_VERDICT this paper is not ready for publication.
+REV_OPEN_VERDICT I recommend rejection.
+
+[merit2]
+REV_OPEN_VERDICT I lean toward rejecting this paper.
+REV_OPEN_VERDICT this paper is below the bar for this venue.
+REV_OPEN_VERDICT I am not convinced by this paper.
+REV_OPEN_VERDICT this paper has promise but needs substantial work.
+
+[merit3]
+REV_OPEN_VERDICT this is a borderline paper.
+REV_OPEN_VERDICT I am on the fence about this paper.
+REV_OPEN_VERDICT this paper is close to the bar.
+REV_OPEN_VERDICT I have mixed feelings about this paper.
+
+[merit4]
+REV_OPEN_VERDICT this is a good paper.
+REV_OPEN_VERDICT I lean toward accepting this paper.
+REV_OPEN_VERDICT this is a solid paper that I would like to see accepted.
+REV_OPEN_VERDICT I think this paper should be accepted.
+
+[merit5]
+REV_OPEN_VERDICT this is an excellent paper.
+REV_OPEN_VERDICT I strongly recommend accepting this paper.
+REV_OPEN_VERDICT this is one of the best papers in my batch.
+REV_OPEN_VERDICT this paper should clearly be accepted.
+
+#############################################################################
+####### Expertise #######
+#############################################################################
+
+[novice]
+
+REV_S_LEVEL as a non-expert, I found the background in Section REV_SEC helpful.
+REV_S_LEVEL the paper was accessible to me even though I do not work on PAPER_THING.
+REV_S_LEVEL the examples in Section REV_SEC made the idea concrete.
+REV_S_LEVEL the introduction explains why anyone should care about PAPER_THING, which I appreciated.
+
+REV_W_LEVEL_BODY I am not an expert in PAPER_FIELD, but the paper does not explain why PAPER_SUBJECT PAPER_IS_ARE the right starting point, and I suspect an expert would want to know. REV_TONE_CLARITY_CONSEQ
+REV_W_LEVEL_BODY Section REV_SEC assumes familiarity with SCI_THING. a paragraph of background would help readers outside PAPER_FIELD. REV_TONE_CLARITY_CONSEQ
+REV_W_LEVEL_BODY I could not evaluate the claim in Section REV_SEC that SCI_THING REV_OBSERVATION; it may be well known in PAPER_FIELD, but no citation is given. REV_TONE_NOVELTY_CONSEQ
+REV_W_LEVEL_BODY the paper uses "SCI_BUZZWORD_ADJ" and "SCI_BUZZWORD_ADJ" as if they were standard terms; they are not standard to me. REV_TONE_CLARITY_CONSEQ
+
+[expert]
+
+REV_S_LEVEL the paper is aware of REV_PRIOR_WORK and positions itself against it honestly.
+REV_S_LEVEL the analysis of SCI_THING in Section REV_SEC is correct as far as I can tell, and more careful than in most papers on PAPER_THING.
+REV_S_LEVEL the authors have clearly built and run SYSNAME; the details in Section REV_SUBSEC ring true.
+REV_S_LEVEL this is the first paper I have seen that takes SCI_THING seriously in the context of PAPER_THING.
+REV_S_LEVEL the evaluation methodology is sound, and the choice of SCI_THING as a baseline is the right one.
+
+REV_W_LEVEL_BODY the claim in Section REV_SEC that SCI_THING REV_OBSERVATION is not true in general; see REV_PRIOR_WORK for a counterexample. REV_TONE_DESIGN_CONSEQ
+REV_W_LEVEL_BODY REV_PRIOR_WORK solved essentially the same problem with SCI_THING. the paper should compare against it, or at least explain why the comparison is inappropriate. REV_TONE_NOVELTY_CONSEQ
+REV_W_LEVEL_BODY the paper ignores the standard technique for PAPER_THING, which is SCI_THING. a comparison would be straightforward. REV_TONE_NOVELTY_CONSEQ
+REV_W_LEVEL_BODY the REV_PCT REV_BENEFIT in Figure REV_FIG is smaller than what REV_PRIOR_WORK reports for a similar setup. some explanation is needed. REV_TONE_EVAL_CONSEQ
+REV_W_LEVEL_BODY the design assumes that SCI_THING REV_IS_ARE SCI_BUZZWORD_ADJ. anyone who has deployed PAPER_THING knows this is REV_ASSUMPTION_BAD. REV_TONE_DESIGN_CONSEQ
+
+[expertise1]
+REV_S_LEVEL I do not work in this area, so I will defer to the other reviewers on the technical contribution.
+REV_CLOSE_EXTRA my confidence in this review is low.
+REV_CLOSE_EXTRA I would defer to more expert reviewers on the technical merits.
+
+[expertise2]
+REV_CLOSE_EXTRA I know this area only in passing, so the other reviewers may weigh the related work differently.
+
+[expertise3]
+REV_CLOSE_EXTRA 
+
+[expertise4]
+REV_CLOSE_EXTRA I have worked on PAPER_THING for some years and am confident in this assessment.
+REV_CLOSE_EXTRA 

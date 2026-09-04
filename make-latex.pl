@@ -68,6 +68,7 @@ $0 [options]
     --talk                    Make a talk, instead of a paper
     --long                    Make a long (10-page) paper, with subsections
     --title <title>           Set the title (useful for talks)
+    --title-only              Print the title this seed selects, and exit
     --sysname <name>          Set the system name
     --enable <section>        Enable a configuration section
     --regenerate              Set seed from output name
@@ -83,7 +84,7 @@ EOUsage
 my %options;
 &GetOptions( \%options, "help|?", "author=s@", "seed=s", "tar=s", "file|o|output=s",
 	"json:s", "enable=s@", "regenerate|regen",
-	"savedir=s", "remote", "talk", "long", "title=s", "sysname=s" )
+	"savedir=s", "remote", "talk", "long", "title=s", "title-only", "sysname=s" )
     or &usage;
 
 if( $options{"help"} ) {
@@ -94,6 +95,10 @@ if( defined $options{"author"} ) {
 }
 if( defined $options{"remote"} ) {
     $remote = 1;
+}
+my $print_title = 0;
+if( defined $options{"title-only"} ) {
+    $print_title = 1;
 }
 if( defined $options{"title"} ) {
     $title = $options{"title"};
@@ -174,6 +179,12 @@ if( defined $title ) {
 	$tex_dat->def("SCI_TITLE", $title);
 }
 my $tex = $tex_dat->generate ($start_rule);
+if( $print_title ) {
+    # The title is fixed once the paper has been generated, so this is the
+    # same title a full run with this seed would use.
+    print scalar($tex_dat->expand("SCI_TITLE")), "\n";
+    exit(0);
+}
 open( TEX, ">$tex_file" ) or die( "Couldn't open $tex_file for writing" );
 print TEX $tex;
 close( TEX );
@@ -316,7 +327,9 @@ if (defined $options{"json"}) {
         $pages = $pages =~ /\A[1-9][0-9]*\z/ ? int($pages) : undef;
     }
     my %jdata = ("title" => $title,
-                 "abstract" => $abstract);
+                 "abstract" => $abstract,
+                 "sysname" => $sysname,
+                 "seed" => 0 + $seed);
     $jdata{"pages"} = $pages if defined($pages);
     $jdata{"authors"} = \@authors if @authors;
     print J $json->encode(\%jdata);
