@@ -15,10 +15,11 @@ can dump the generated paper's metadata as JSON.
 
 * **Perl 5.** Everything but `JSON` ships with Perl; `Autoformat.pm` and
   `Reform.pm` are bundled here, so you do *not* need `Text::Autoformat`.
-  Install `JSON` if you don't have it:
+  Install `JSON` if you don't have it, and `Math::Random::MT` for
+  `make-review.pl`:
 
   ```sh
-  cpan JSON        # or: cpanm JSON, or your OS package (perl-JSON, libjson-perl)
+  cpan JSON Math::Random::MT   # or: cpanm, or your OS package (perl-JSON, libjson-perl, libmath-random-mt-perl)
   ```
 
 * **A TeX distribution** providing `pdflatex` and `bibtex` (TeX Live or
@@ -256,7 +257,7 @@ system name are generated fresh.
 | `--title <title>`, `--sysname <name>` | Set the paper's title or system name, overriding `--paper`. |
 | `--merit <n>`, `--expertise <n>` | Force a score instead of drawing it. |
 | `-n`, `--count <n>` | Write several reviews of the same paper, with independent scores. |
-| `--seed <seed>` | Seed the PRNG. The same seed and paper reproduce the same reviews. The seed is printed to stderr if it was not given. With `--papers`, paper `i` is seeded with `seed + i`, so a shard produces exactly what the unsharded run would. |
+| `--seed <a>[,<b>]` | Seed the PRNG. Each review has its own seed sequence of two 32-bit integers, and review `j` of paper `i` is seeded with `[a + i, b + j]` (`b` defaults to 0), so a shard produces exactly what the unsharded run would. Without `--seed`, each review's sequence is read from `/dev/urandom` and printed to stderr as `seed=a,b`. |
 | `-o`, `--file <file>` | Write here instead of to stdout. |
 | `--json [<file>]` | Write JSON instead of text, to `<file>` or to stdout. |
 | `--enable <section>` | Turn on a grammar section, as for `make-latex.pl`. |
@@ -273,7 +274,7 @@ form the output is always an array, one object per review:
       "comments" : "I lean toward rejecting this paper. ...",
       "title" : "An Analysis of Cache Coherence",
       "sysname" : "GueZope",
-      "seed" : 1234
+      "seed" : [ 1234, 2 ]
    }
 ]
 ```
@@ -282,6 +283,13 @@ form the output is always an array, one object per review:
 abstract in the paper JSON, and `comments` contains the `Strengths:` and
 `Weaknesses:` headings and `- ` bullets shown above. The LaTeX that leaks
 into the paper JSON has been stripped from all the strings here.
+
+`seed` is the review's seed sequence. A review depends only on its seed
+and the paper, so `--seed 1234,2 --paper paper.json` regenerates the
+review above exactly. The PRNG is the Mersenne Twister of
+`Math::Random::MT`, seeded with the two-integer array. When the paper
+lacks a title or system name, each review invents its own, so `-n 3`
+without `--paper` reviews three different imaginary papers.
 
 ### Reviewing a corpus
 
@@ -302,9 +310,8 @@ done; wait
       "index" : 0,
       "title" : "Contrasting Voice-over-IP and Access Points Using Alp",
       "sysname" : "Alp",
-      "seed" : 1,
       "content_file" : "0000.pdf",
-      "reviews" : [ { "merit" : 2, "expertise" : 3, "summary" : "...", "comments" : "..." }, ... ]
+      "reviews" : [ { "merit" : 2, "expertise" : 3, "summary" : "...", "comments" : "...", "seed" : [ 1, 0 ] }, ... ]
    }
 ]
 ```

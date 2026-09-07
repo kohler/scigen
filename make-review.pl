@@ -17,10 +17,30 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 use strict;
-require "./scigen.pm";
 use IO::File;
 use Getopt::Long;
 use JSON;
+use Math::Random::MT;
+
+# Every rand() in this program, including those in scigen.pm, draws from
+# this Mersenne Twister, which is reseeded before each review.
+our $gen;
+BEGIN {
+    *CORE::GLOBAL::rand = sub (;$) {
+        $gen = Math::Random::MT->new( @{ random_seed() } ) if !defined $gen;
+        $gen->rand( @_ ? $_[0] : 1 );
+    };
+}
+require "./scigen.pm";
+
+# Read a seed sequence, two 32-bit integers, from /dev/urandom.
+sub random_seed {
+    my $fh = new IO::File( "</dev/urandom" ) or die( "/dev/urandom: $!\n" );
+    binmode( $fh );
+    my $buf;
+    read( $fh, $buf, 8 ) == 8 or die( "/dev/urandom: short read\n" );
+    [ unpack( "V2", $buf ) ];
+}
 
 # Overall Merit is drawn from this distribution: P(1) = 30%, P(2) = 40%,
 # P(3) = 15%, P(4) = 10%, P(5) = 5%. Reviewer Expertise is uniform on 1..4.
@@ -52,8 +72,11 @@ Reviewer Expertise (1-4), a paper summary, and comments to the authors.
     --merit <n>               Force the Overall Merit score (1-5)
     --expertise <n>           Force the Reviewer Expertise score (1-4)
     -n, --count <n>           Write this many reviews; the default is 1
-    --seed <seed>             Seed the prng with this. With --papers, paper
-                              i is seeded with <seed> + i
+    --seed <a>[,<b>]          Seed the prng. Each review has its own seed
+                              sequence of two 32-bit integers; review j of
+                              paper i is seeded with [<a> + i, <b> + j],
+                              where <b> defaults to 0. Without --seed, each
+                              review's sequence comes from /dev/urandom
     -o, --file <file>         Write the review here instead of to stdout
     --json [<file>]           Write JSON instead of text. With no file name,
                               the JSON goes to stdout (or -o).
@@ -81,10 +104,34 @@ if( defined $options{"expertise"} ) {
         if $options{"expertise"} < 1 || $options{"expertise"} > $max_expertise;
 }
 
-my $seed = $options{"seed"} // int rand 0xffffffff;
-srand($seed);
+my @base_seed;
+if( defined $options{"seed"} ) {
+    @base_seed = $options{"seed"} =~ /\A(\d+)(?:,(\d+))?\z/
+        or die( "--seed wants <a> or <a>,<b>\n" );
+    $base_seed[1] //= 0;
+    foreach (@base_seed) {
+        die( "--seed values must be 32-bit integers\n" ) if $_ > 0xffffffff;
+    }
+}
 
-# The paper being reviewed.
+# Return the seed sequence for review $j of paper $i, and reseed the prng
+# with it.
+sub seed_review {
+    my ($i, $j) = @_;
+    my $seed = @base_seed
+        ? [ ($base_seed[0] + $i) & 0xffffffff, ($base_seed[1] + $j) & 0xffffffff ]
+        : random_seed();
+    $gen = Math::Random::MT->new( @$seed );
+    $seed;
+}
+
+# The paper being reviewed, as given by --paper/--papers, --title, and
+# --sysname. Anything missing is invented afresh for each review, so that a
+# review depends only on its seed and the paper.
+my ($paper_title, $paper_abstract, $paper_sysname);
+
+# The title, system name, and abstract of the paper the current review
+# describes.
 my ($title, $abstract, $sysname);
 
 # Topic phrases from the paper, and one of them (@subject) that the grammar
@@ -127,29 +174,35 @@ sub get_system_name {
 # paper under review. --title and --sysname override it.
 sub set_paper {
     my ($paper) = @_;
-    $title = $options{"title"} // $paper->{"title"};
-    $sysname = $options{"sysname"} // $paper->{"sysname"};
-    $abstract = $paper->{"abstract"} // "";
-    @things = ();
-    @fields = ();
-    @subject = ();
+    $paper_title = $options{"title"} // $paper->{"title"};
+    $paper_sysname = $options{"sysname"} // $paper->{"sysname"};
+    $paper_abstract = $paper->{"abstract"} // "";
 
     # A system name that make-latex.pl did not record can usually be found
     # in the abstract, where it appears in braces or \emph, or at the end of
     # the title.
-    if( !defined $sysname ) {
-        my $text = $abstract;
+    if( !defined $paper_sysname ) {
+        my $text = $paper_abstract;
         $text =~ s/\\cite\{[^{}]*\}//g;
         if( $text =~ /\\emph\{([^{}]+)\}/ || $text =~ /\{([A-Za-z][^{}\s]*)\}/ ) {
-            $sysname = $1;
-        } elsif( defined($title)
-                 && ($title =~ /\b(?:using|with)\s+(\S+)\s*\z/i || $title =~ /\A(\S+):\s/) ) {
-            $sysname = $1;
+            $paper_sysname = $1;
+        } elsif( defined($paper_title)
+                 && ($paper_title =~ /\b(?:using|with)\s+(\S+)\s*\z/i
+                     || $paper_title =~ /\A(\S+):\s/) ) {
+            $paper_sysname = $1;
         }
     }
-    $sysname = get_system_name() if !defined $sysname;
-    $sysname = detex( $sysname );
-    $title = detex( $title );
+}
+
+# Start a review of the current paper: reset the per-review state and
+# invent a system name if the paper has none.
+sub start_review {
+    $title = detex( $paper_title );
+    $abstract = $paper_abstract;
+    $sysname = detex( $paper_sysname // get_system_name() );
+    @things = ();
+    @fields = ();
+    @subject = ();
 }
 
 # Return the entries of the named rules that appear as phrases in $text, as
@@ -261,15 +314,18 @@ sub make_review {
 }
 
 sub review_paper {
+    my ($index) = @_;
     my @reviews;
-    for( my $i = 0; $i < $count; $i++ ) {
+    for( my $j = 0; $j < $count; $j++ ) {
+        my $seed = seed_review( $index, $j );
+        start_review();
         my $merit = $options{"merit"} // pick_weighted( @merit_weights );
         my $expertise = $options{"expertise"} // (1 + int rand $max_expertise);
-        push @reviews, make_review( $merit, $expertise );
-    }
-    foreach my $r (@reviews) {
+        my $r = make_review( $merit, $expertise );
         $r->{"title"} = $title;
         $r->{"sysname"} = $sysname;
+        $r->{"seed"} = $seed;
+        push @reviews, $r;
     }
     @reviews;
 }
@@ -285,6 +341,7 @@ sub print_reviews {
     my ($out, @reviews) = @_;
     my $i = 0;
     foreach my $r (@reviews) {
+        print STDERR "seed=$r->{seed}->[0],$r->{seed}->[1]\n" if !@base_seed;
         print $out "\n", "=" x 72, "\n\n" if $i++;
         print $out "Overall Merit: $r->{merit}\n",
             "Reviewer Expertise: $r->{expertise}\n\n",
@@ -316,13 +373,11 @@ if( defined $options{"papers"} ) {
     my @results;
     for( my $i = 0; $i < @$papers; $i++ ) {
         next if $i % $nshards != $shard;
-        srand( $seed + $i );
         set_paper( $papers->[$i] );
-        my @reviews = review_paper();
+        my @reviews = review_paper( $i );
         if( defined $options{"json"} ) {
             my %result = ( "index" => $i, "title" => $title,
-                           "sysname" => $sysname, "seed" => $seed + $i,
-                           "reviews" => \@reviews );
+                           "sysname" => $sysname, "reviews" => \@reviews );
             my $sub = $papers->[$i]->{"submission"};
             $result{"content_file"} = $sub->{"content_file"}
                 if ref($sub) eq "HASH" && defined $sub->{"content_file"};
@@ -338,13 +393,10 @@ if( defined $options{"papers"} ) {
 } else {
     my $paper = defined $options{"paper"} ? read_json( $options{"paper"} ) : {};
     set_paper( $paper );
-    my @reviews = review_paper();
+    my @reviews = review_paper( 0 );
     if( defined $options{"json"} ) {
-        $_->{"seed"} = $seed foreach @reviews;
         print $out $json->encode( \@reviews );
     } else {
         print_reviews( $out, @reviews );
     }
 }
-
-print STDERR "seed=$seed\n" if !defined $options{"seed"};
