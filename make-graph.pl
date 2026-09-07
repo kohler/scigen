@@ -171,6 +171,9 @@ my @y = ();
 my $funcfh = new IO::File ("<functions.in");
 my $funcdat = scigen->new();
 $funcdat->read_rules ($funcfh, 0);
+# PIDNUM stands in for the process ID that functions.in used to divide by
+# 1000, which made a graph's curves depend on the PID as well as the seed.
+$funcdat->def ("PIDNUM", sprintf ("%.3f", rand (100)));
 
 print GPFILE "plot ";
 for( my $i = 0; $i < $curves; $i++ ) {

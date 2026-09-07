@@ -40,8 +40,12 @@ my $bib_file = "$tmp_dir/scigenbibfile.bib";
 my $class_files = "IEEEtran.cls IEEE.bst usenix-2020-09.sty";
 my $figure_tries = 5;
 my $have_neato = `which neato 2>/dev/null` ne "";
+# Recorded in the JSON output, since the grammar changes between commits.
+my $git_commit = `git rev-parse --short=7 HEAD 2>/dev/null`;
+chomp $git_commit;
 my @authors;
 my $seed;
+my $seed_set = 0;
 my $remote = 0;
 my $title;
 my $out_file;
@@ -83,8 +87,9 @@ EOUsage
 # First parse options
 my %options;
 &GetOptions( \%options, "help|?", "author=s@", "seed=s", "tar=s", "file|o|output=s",
-	"json:s", "enable=s@", "regenerate|regen",
-	"savedir=s", "remote", "talk", "long", "title=s", "title-only", "sysname=s" )
+        "json:s", "enable=s@", "regenerate|regen",
+        "savedir=s", "remote", "talk", "long", "title=s", "title-only", "sysname=s",
+        "seed-count=s" )
     or &usage;
 
 if( $options{"help"} ) {
@@ -105,6 +110,7 @@ if( defined $options{"title"} ) {
 }
 if( defined $options{"seed"} ) {
     $seed = $options{"seed"};
+    $seed_set = 1;
 } else {
     $seed = int rand 0xffffffff;
 }
@@ -127,223 +133,247 @@ if (defined($options{"regenerate"})) {
     }
 }
 
-srand($seed);
-
-if (defined($out_file) && -d $out_file) {
-    $out_file =~ s/\/\z//;
-    $out_file .= "/scigen-$seed.pdf";
-}
-
-my $name_dat = undef;
-
-my $sysname;
-if( defined $options{"sysname"} ) {
-    $sysname = $options{"sysname"};
-} else {
-    $sysname = &get_system_name();
-}
-
+my $tex_dat;
+my $start_rule;
+my $name_dat;
 my $enablearg = join "", map { " --enable \"$_\"" } @{$options{"enable"} || []};
 
-my $tex_fh; 
-my $start_rule;
-if( defined $options{"talk"} ) {
-    $tex_fh = new IO::File ("<talkrules.in");
-    $start_rule = "SCITALK_LATEX";
-} elsif( defined $options{"long"} ) {
-    $tex_fh = new IO::File ("<scilongrules.in");
-    $start_rule = "SCILONGPAPER_LATEX";
-} else {
-    $tex_fh = new IO::File ("<scirules.in");
-    $start_rule = "SCIPAPER_LATEX";
-}
-
-my $tex_dat = scigen->new();
-$tex_dat->enable(@{$options{"enable"} || []});
-$tex_dat->def("SYSNAME", $sysname);
-# add in authors
-$tex_dat->def("AUTHOR_NAME", @authors);
-my $s = "";
-for( my $i = 0; $i <= $#authors; $i++ ) {
-    $s .= "AUTHOR_NAME";
-    if( $i < $#authors-1 ) {
-	$s .= ", ";
-    } elsif( $i == $#authors-1 ) {
-	$s .= " and ";
-    }
-}
-$tex_dat->def("SCIAUTHORS", $s);
-
-$tex_dat->read_rules ($tex_fh, 0);
-if( defined $title ) {
-	$tex_dat->def("SCI_TITLE", $title);
-}
-my $tex = $tex_dat->generate ($start_rule);
-if( $print_title ) {
-    # The title is fixed once the paper has been generated, so this is the
-    # same title a full run with this seed would use.
-    print scalar($tex_dat->expand("SCI_TITLE")), "\n";
-    exit(0);
-}
-open( TEX, ">$tex_file" ) or die( "Couldn't open $tex_file for writing" );
-print TEX $tex;
-close( TEX );
-
-# for every figure you find in the file, generate a figure
-open( TEX, "<$tex_file" ) or die( "Couldn't read $tex_file" );
-my %citelabels = ();
-my @figures = ();
-while( <TEX> ) {
-
-    my $line = $_;
-
-    if( /\{(figure.*?pdf)\}/ ) {
-	my $figfile = "$tmp_dir/$1";
-	my $color = defined $options{"talk"} ? " --color" : "";
-	&make_figure( $figfile, sub {
-	    "./make-graph.pl --file \"$figfile\" --seed $_[0] " .
-		"--tmpdir \"$tmp_dir\"$color$enablearg" } );
-	push @figures, $figfile;
-    }
-
-    if( /\{(dia.*?pdf)\}/ ) {
-	my $figfile = "$tmp_dir/$1";
-	&make_figure( $figfile, sub {
-	    $have_neato
-		? "./make-diagram.pl --sys \"$sysname\" --file \"$figfile\" " .
-		  "--seed $_[0] --tmpdir \"$tmp_dir\"$enablearg"
-		: "./make-graph.pl --file \"$figfile\" --seed $_[0] " .
-		  "--tmpdir \"$tmp_dir\"$enablearg" } );
-	push @figures, $figfile;
-    }
-
-    if( /[=\{]([^\{]*)-(talkfig[^\,\}]*)[\,\}]/) {
-	my $figfile = "$tmp_dir/$1-$2";
-	my $type = $1;
-	&make_figure( $figfile, sub {
-	    "./make-talk-figure.pl --file \"$figfile\" --seed $_[0] " .
-		"--type $type --tmpdir \"$tmp_dir\"$enablearg" } );
-	push @figures, $figfile;
-    }
-
-    # find citations
-    while( $line =~ s/(cite\:\d+)[,\}]// ) {
-        my $citelabel = $1;
-	$citelabels{$citelabel} = 1;
-    }
-    if( $line =~ /(cite\:\d+)$/ ) {
-        my $citelabel = $1;
-	$citelabels{$citelabel} = 1;
-    }
-
-}
-close( TEX );
-
-# generate bibtex 
-foreach my $author (@authors) {
-    for( my $i = 0; $i < 10; $i++ ) {
-	push @{$tex_dat->{rules}->{"SCI_SOURCE"}}, $author;
-    }
-}
-open( BIB, ">$bib_file" ) or die( "Couldn't open $bib_file for writing" );
-foreach my $clabel (keys(%citelabels)) {
-    my $sysname_cite = &get_system_name();
-    $tex_dat->def("SYSNAME", $sysname_cite);
-    $tex_dat->def("CITE_LABEL_GIVEN", $clabel);
-    my $bib = $tex_dat->generate("BIBTEX_ENTRY");
-    print BIB $bib;
-    
-}
-close( BIB );
-
-if( !defined $options{"savedir"} ) {
-
-    $ENV{"TEXPICTS"} = "$tmp_dir:";
-    my @class_files = split( /\s+/, $class_files );
-    scigen::run_system( "cp", @class_files, $tmp_dir )
-	and die( "Couldn't copy class files to $tmp_dir" );
-    my @pdflatex = ( "pdflatex", "-interaction=nonstopmode", $tex_prefix );
-    foreach my $cmd ( \@pdflatex, [ "bibtex", $tex_prefix ],
-		      \@pdflatex, \@pdflatex ) {
-	scigen::run_system( { chdir => $tmp_dir }, @$cmd );
-    }
-    scigen::run_system( { chdir => $tmp_dir }, "rm", "-f", @class_files );
-
-    move( $pdf_file, $out_file )
-	or die( "Couldn't write $out_file: $!" );
-}
-
-my $seedstring = "seed=$seed ";
-foreach my $author (@authors) {
-    $seedstring .= "author=$author ";
-}
-
-if( defined $options{"tar"} or defined $options{"savedir"} ) {
-    my $f = $options{"tar"};
-    my $tartmp = "$tmp_dir/tartmp.$$";
-    my $all_files = "$tex_file $class_files @figures $bib_file";
-    scigen::run_system( "mkdir $tartmp; cp $all_files $tartmp/;" ) and
-	die( "Couldn't mkdir $tartmp" );
-    $all_files =~ s/\Q$tmp_dir\E\///g;
-    scigen::run_system( "echo $seedstring > $tartmp/seed.txt" ) and
-	die( "Couldn't cat to $tartmp/seed.txt" );
-    $all_files .= " seed.txt";
-
-    if( defined $options{"tar"} ) {
-	scigen::run_system( "cd $tartmp; tar -czf $$.tgz $all_files; cd -; " .
-		"cp $tartmp/$$.tgz $f; rm -rf $tartmp" ) and 
-		    die( "Couldn't tar to $f" );
+sub make_tex_dat {
+    my $tex_fh;
+    if( defined $options{"talk"} ) {
+        $tex_fh = new IO::File ("<talkrules.in");
+        $start_rule = "SCITALK_LATEX";
+    } elsif( defined $options{"long"} ) {
+        $tex_fh = new IO::File ("<scilongrules.in");
+        $start_rule = "SCILONGPAPER_LATEX";
     } else {
-	# saving everything untarred
-	my $dir = $options{"savedir"};
-	# WARNING: we delete this directory if it exists
-	if( -d $dir ) {
-	    scigen::run_system( "rm", "-rf", $dir ) and die( "Couldn't rm existing $dir" );
-	}
-	scigen::run_system( "mv", $tartmp, $dir ) and die( "Couldn't move $tartmp to $dir" );
+        $tex_fh = new IO::File ("<scirules.in");
+        $start_rule = "SCIPAPER_LATEX";
     }
 
+    my $tex_dat = scigen->new();
+    $tex_dat->enable(@{$options{"enable"} || []});
+    $tex_dat->read_rules($tex_fh, 0);
+    $tex_dat;
+}
+
+$tex_dat = &make_tex_dat;
+if ($print_title) {
+    my $seed_count = defined($options{"seed-count"}) ? int($options{"seed-count"}) : 1;
+    for (my $i = 0; $i < $seed_count; ++$i) {
+        print STDOUT $seed, "\t", &run_latex, "\n";
+        ++$seed;
+    }
 } else {
-    print "$seedstring\n";
+    &run_latex;
 }
 
-if (defined $options{"json"}) {
-	my ($title) = $tex_dat->expand("SCI_TITLE");
-	my ($abstract) = $tex_dat->expand("SCI_ABSTRACT");
-	my ($json) = JSON->new->utf8->pretty;
-    my ($jfile) = $options{"json"};
-    if ($jfile eq "") {
-        $jfile = defined($out_file) ? "$out_file.json" : ".";
+sub run_latex {
+    srand($seed);
+
+    my $sysname;
+    if( defined $options{"sysname"} ) {
+        $sysname = $options{"sysname"};
+    } else {
+        $sysname = &get_system_name();
     }
-    if (-d $jfile) {
-        $jfile =~ s/\/\z//;
-        $jfile .= "/scigen-$seed.pdf.json";
+
+    $tex_dat->clear();
+    $tex_dat->def("SYSNAME", $sysname);
+    # add in authors
+    $tex_dat->def("AUTHOR_NAME", @authors);
+    my $s = "";
+    for( my $i = 0; $i <= $#authors; $i++ ) {
+        $s .= "AUTHOR_NAME";
+        if( $i < $#authors-1 ) {
+            $s .= ", ";
+        } elsif( $i == $#authors-1 ) {
+            $s .= " and ";
+        }
     }
-	open(J, ">", $jfile) or die;
-    my $pages;
-    if (defined $out_file) {
-        $pages = `mutool run countpages.js \Q$out_file\E`;
-        chomp $pages;
-        $pages = $pages =~ /\A[1-9][0-9]*\z/ ? int($pages) : undef;
+    $tex_dat->def("SCIAUTHORS", $s);
+
+    if( defined $title ) {
+        $tex_dat->def("SCI_TITLE", $title);
     }
-    my %jdata = ("title" => $title,
-                 "abstract" => $abstract,
-                 "sysname" => $sysname,
-                 "seed" => 0 + $seed);
-    $jdata{"pages"} = $pages if defined($pages);
-    $jdata{"authors"} = \@authors if @authors;
-    print J $json->encode(\%jdata);
-	close J;
-}
+    my $tex = $tex_dat->generate ($start_rule);
+    if( $print_title ) {
+        # The title is fixed once the paper has been generated, so this is the
+        # same title a full run with this seed would use.
+        return scalar($tex_dat->expand("SCI_TITLE"));
+    }
+
+    open( TEX, ">$tex_file" ) or die( "Couldn't open $tex_file for writing" );
+    print TEX $tex;
+    close( TEX );
+
+    # for every figure you find in the file, generate a figure
+    open( TEX, "<$tex_file" ) or die( "Couldn't read $tex_file" );
+    my %citelabels = ();
+    my @figures = ();
+    while( <TEX> ) {
+
+        my $line = $_;
+
+        if( /\{(figure.*?pdf)\}/ ) {
+            my $figfile = "$tmp_dir/$1";
+            my $color = defined $options{"talk"} ? " --color" : "";
+            &make_figure( $figfile, sub {
+                "./make-graph.pl --file \"$figfile\" --seed $_[0] " .
+                    "--tmpdir \"$tmp_dir\"$color$enablearg" } );
+            push @figures, $figfile;
+        }
+
+        if( /\{(dia.*?pdf)\}/ ) {
+            my $figfile = "$tmp_dir/$1";
+            &make_figure( $figfile, sub {
+                $have_neato
+                    ? "./make-diagram.pl --sys \"$sysname\" --file \"$figfile\" " .
+                      "--seed $_[0] --tmpdir \"$tmp_dir\"$enablearg"
+                    : "./make-graph.pl --file \"$figfile\" --seed $_[0] " .
+                      "--tmpdir \"$tmp_dir\"$enablearg" } );
+            push @figures, $figfile;
+        }
+
+        if( /[=\{]([^\{]*)-(talkfig[^\,\}]*)[\,\}]/) {
+            my $figfile = "$tmp_dir/$1-$2";
+            my $type = $1;
+            &make_figure( $figfile, sub {
+                "./make-talk-figure.pl --file \"$figfile\" --seed $_[0] " .
+                    "--type $type --tmpdir \"$tmp_dir\"$enablearg" } );
+            push @figures, $figfile;
+        }
+
+        # find citations
+        while( $line =~ s/(cite\:\d+)[,\}]// ) {
+            my $citelabel = $1;
+            $citelabels{$citelabel} = 1;
+        }
+        if( $line =~ /(cite\:\d+)$/ ) {
+            my $citelabel = $1;
+            $citelabels{$citelabel} = 1;
+        }
+
+    }
+    close( TEX );
+
+    # generate bibtex
+    foreach my $author (@authors) {
+        for( my $i = 0; $i < 10; $i++ ) {
+            push @{$tex_dat->{rules}->{"SCI_SOURCE"}}, $author;
+        }
+    }
+    open( BIB, ">$bib_file" ) or die( "Couldn't open $bib_file for writing" );
+    foreach my $clabel (sort keys(%citelabels)) {
+        my $sysname_cite = &get_system_name();
+        $tex_dat->def("SYSNAME", $sysname_cite);
+        $tex_dat->def("CITE_LABEL_GIVEN", $clabel);
+        my $bib = $tex_dat->generate("BIBTEX_ENTRY");
+        print BIB $bib;
+
+    }
+    close( BIB );
+
+    if (defined($out_file) && -d $out_file) {
+        $out_file =~ s/\/\z//;
+        $out_file .= "/scigen-$seed.pdf";
+    }
+
+    if( !defined $options{"savedir"} ) {
+
+        $ENV{"TEXPICTS"} = "$tmp_dir:";
+        my @class_files = split( /\s+/, $class_files );
+        scigen::run_system( "cp", @class_files, $tmp_dir )
+            and die( "Couldn't copy class files to $tmp_dir" );
+        my @pdflatex = ( "pdflatex", "-interaction=nonstopmode", $tex_prefix );
+        foreach my $cmd ( \@pdflatex, [ "bibtex", $tex_prefix ],
+                          \@pdflatex, \@pdflatex ) {
+            scigen::run_system( { chdir => $tmp_dir }, @$cmd );
+        }
+        scigen::run_system( { chdir => $tmp_dir }, "rm", "-f", @class_files );
+
+        move( $pdf_file, $out_file )
+            or die( "Couldn't write $out_file: $!" );
+    }
+
+    my $seedstring = "seed=$seed ";
+    foreach my $author (@authors) {
+        $seedstring .= "author=$author ";
+    }
+
+    if( defined $options{"tar"} or defined $options{"savedir"} ) {
+        my $f = $options{"tar"};
+        my $tartmp = "$tmp_dir/tartmp.$$";
+        my $all_files = "$tex_file $class_files @figures $bib_file";
+        scigen::run_system( "mkdir $tartmp; cp $all_files $tartmp/;" ) and
+            die( "Couldn't mkdir $tartmp" );
+        $all_files =~ s/\Q$tmp_dir\E\///g;
+        scigen::run_system( "echo $seedstring > $tartmp/seed.txt" ) and
+            die( "Couldn't cat to $tartmp/seed.txt" );
+        $all_files .= " seed.txt";
+
+        if( defined $options{"tar"} ) {
+            scigen::run_system( "cd $tartmp; tar -czf $$.tgz $all_files; cd -; " .
+                "cp $tartmp/$$.tgz $f; rm -rf $tartmp" ) and 
+                    die( "Couldn't tar to $f" );
+        } else {
+            # saving everything untarred
+            my $dir = $options{"savedir"};
+            # WARNING: we delete this directory if it exists
+            if( -d $dir ) {
+                scigen::run_system( "rm", "-rf", $dir ) and die( "Couldn't rm existing $dir" );
+            }
+            scigen::run_system( "mv", $tartmp, $dir ) and die( "Couldn't move $tartmp to $dir" );
+        }
+
+    } else {
+        print "$seedstring\n";
+    }
+
+    if (defined $options{"json"}) {
+        my ($title) = $tex_dat->expand("SCI_TITLE");
+        my ($abstract) = $tex_dat->expand("SCI_ABSTRACT");
+        my ($json) = JSON->new->utf8->pretty;
+        my ($jfile) = $options{"json"};
+        if ($jfile eq "") {
+            $jfile = defined($out_file) ? "$out_file.json" : ".";
+        }
+        if (-d $jfile) {
+            $jfile =~ s/\/\z//;
+            $jfile .= "/scigen-$seed.pdf.json";
+        }
+        open(J, ">", $jfile) or die;
+        my $pages;
+        if (defined $out_file) {
+            $pages = `mutool run countpages.js \Q$out_file\E`;
+            chomp $pages;
+            $pages = $pages =~ /\A[1-9][0-9]*\z/ ? int($pages) : undef;
+        }
+        my @enable = grep { $_ ne "" }
+            map { split(/,/, $_) } @{$options{"enable"} || []};
+        my %jdata = ("title" => $title,
+                     "abstract" => $abstract,
+                     "sysname" => $sysname,
+                     "seed" => 0 + $seed,
+                     "enable" => \@enable);
+        $jdata{"commit"} = $git_commit if $git_commit ne "";
+        $jdata{"long"} = JSON::true if defined $options{"long"};
+        $jdata{"talk"} = JSON::true if defined $options{"talk"};
+        $jdata{"pages"} = $pages if defined($pages);
+        $jdata{"authors"} = \@authors if @authors;
+        print J $json->encode(\%jdata);
+        close J;
+    }
 
 
-if( defined $out_file ) {
-    print "wrote $out_file\n";
-}
+    if( defined $out_file ) {
+        print "wrote $out_file\n";
+    }
 
-foreach my $enablement ($tex_dat->list_enabled()) {
-    print STDERR "\n***\n*** WARNING: section $enablement not observed\n***\n\n"
-        if !$tex_dat->section_observed($enablement);
+    foreach my $enablement ($tex_dat->list_enabled()) {
+        print STDERR "\n***\n*** WARNING: section $enablement not observed\n***\n\n"
+            if !$tex_dat->section_observed($enablement);
+    }
 }
 
 # $tmp_dir, and everything our helpers left in it, goes away here
@@ -353,27 +383,27 @@ sub make_figure {
     my $cmd;
 
     for( my $try = 0; $try < $figure_tries; $try++ ) {
-	$cmd = &$make_cmd( int rand 0xffffffff );
-	return if scigen::run_system( $cmd ) == 0 and -f $file;
-	unlink( $file );
+        $cmd = &$make_cmd( int rand 0xffffffff );
+        return if scigen::run_system( $cmd ) == 0 and -f $file;
+        unlink( $file );
     }
 
     die( "Couldn't create $file in $figure_tries attempts.\n" .
-	 "The last command tried was:\n  $cmd\n" .
-	 "Graphs need gnuplot; diagrams also use graphviz's neato.\n" );
+         "The last command tried was:\n  $cmd\n" .
+         "Graphs need gnuplot; diagrams also use graphviz's neato.\n" );
 }
 
 sub get_system_name {
 
     if( $remote ) {
-	return &get_system_name_remote();
+        return &get_system_name_remote();
     }
 
     if( !defined $name_dat ) {
-		my $fh = new IO::File ("<system_names.in");
-		$name_dat = scigen->new();
+        my $fh = new IO::File ("<system_names.in");
+        $name_dat = scigen->new();
         $name_dat->enable(@{$options{"enable"} || []});
-		$name_dat->read_rules($fh, 0);
+        $name_dat->read_rules($fh, 0);
     }
 
     my $name = $name_dat->generate ("SYSTEM_NAME");
@@ -382,9 +412,9 @@ sub get_system_name {
     # how about some effects?
     my $rand = rand;
     if( $rand < .1 ) {
-	$name = "\\emph{$name}";
+        $name = "\\emph{$name}";
     } elsif( length($name) <= 6 and $rand < .4 ) {
-	$name = uc($name);
+        $name = uc($name);
     }
 
     return $name;
@@ -392,24 +422,24 @@ sub get_system_name {
 
 sub get_system_name_remote {
 
-	my $port = $scigen::SCIGEND_PORT | $scigen::SCIGEND_PORT;
+    my $port = $scigen::SCIGEND_PORT | $scigen::SCIGEND_PORT;
     my $sock = IO::Socket::INET->new( PeerAddr => "localhost", 
-				      PeerPort => $port,
-				      Proto => 'tcp' );
+                                      PeerPort => $port,
+                                      Proto => 'tcp' );
     
     my $name;
     if( defined $sock ) {
-	$sock->autoflush;
-	$sock->print( "SYSTEM_NAME\n" );
-	
-	while( <$sock> ) { 
-	    $name = $_;
-	}
-	$sock->close();
-	undef $sock;
-	
+        $sock->autoflush;
+        $sock->print( "SYSTEM_NAME\n" );
+
+        while( <$sock> ) {
+            $name = $_;
+        }
+        $sock->close();
+        undef $sock;
+
     } else {
-	print STDERR "socket didn't work\n";
+        print STDERR "socket didn't work\n";
     }
 
     chomp($name);

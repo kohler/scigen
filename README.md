@@ -75,6 +75,7 @@ is left behind.
 | `--seed <seed>` | Seed the PRNG. The same seed reproduces the same paper. Defaults to a random 32-bit value. The seed is printed on exit, or written to `seed.txt` under `--tar`/`--savedir`. |
 | `--title <title>` | Force the paper's title instead of generating one. |
 | `--title-only` | Print the title this seed selects, and exit without building anything. |
+| `--seed-count <n>` | With `--title-only`, print the titles for `n` consecutive seeds starting at `--seed`, one `seed<TAB>title` line each. |
 | `--enable <section>` | Turn on a named grammar section (see [Sections](#sections)). Repeat for several. Passed through to the figure generators. |
 | `--sysname <name>` | Force the name of the system the paper is about (normally something like `GueZope`). |
 | `--tar <file>` | Also write a `.tgz` of the LaTeX source, figures, `.bib` file, class files, and a `seed.txt`. |
@@ -103,6 +104,8 @@ pretty-printed UTF-8 JSON:
    "abstract" : "Recent advances in authenticated communication and wearable algorithms\nare rarely at odds with extreme programming. In our research, we demonstrate\nthe synthesis of 802.11 mesh networks, which embodies the key principles\nof robotics. GueZope, our new system for trainable information, is the\nsolution to all of these issues.",
    "sysname" : "GueZope",
    "seed" : 1234,
+   "enable" : [],
+   "commit" : "d371997",
    "pages" : 10,
    "authors" : [
       "Jane Q. Researcher"
@@ -112,9 +115,22 @@ pretty-printed UTF-8 JSON:
 
 `title` and `abstract` are strings. `sysname` is the name of the system the
 paper is about, as the grammar saw it (so it may carry `\emph{...}`).
-`seed` is the PRNG seed. `pages` is the PDF's page count; it is `null`
-unless a PDF was written. `authors` lists the `--author` names in the order
-given, and is absent when no authors were supplied.
+`seed` is the PRNG seed. `enable` lists the grammar sections turned on
+with `--enable`, one per element even if they were given comma-separated;
+it is `[]` when none were. `commit` is the first seven hex digits of the
+git HEAD the paper was generated with, and is absent when `make-latex.pl`
+is not run from a git checkout. `long` and `talk` are `true` when the
+corresponding option was given, and absent otherwise. `pages` is the
+PDF's page count, and is absent unless a PDF was written. `authors` lists
+the `--author` names in the order given, and is absent when no authors
+were supplied.
+
+Together, `seed`, `enable`, `commit`, `long`, `talk`, and `authors` are
+what it takes to regenerate the paper: the grammar changes between
+commits, and enabled sections and the paper's length change which rules
+are available, so the same seed produces a different paper under a
+different combination. Authors do not affect the title or abstract, but
+they are salted into the bibliography.
 
 Things worth knowing:
 

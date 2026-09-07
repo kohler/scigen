@@ -48,15 +48,15 @@ my @cleanups;
 sub catch_interrupts {
     push @cleanups, @_;
     foreach my $sig (@interrupt_signals) {
-	$SIG{$sig} = \&interrupt;
+        $SIG{$sig} = \&interrupt;
     }
 }
 
 sub interrupt {
     my ($sig) = @_;
     if (defined $child_pid) {
-	kill $sig, $child_pid;
-	&reap_child();
+        kill $sig, $child_pid;
+        &reap_child();
     }
     &die_from_signal($sig);
 }
@@ -64,7 +64,7 @@ sub interrupt {
 sub die_from_signal {
     my ($sig) = @_;
     while (my $cleanup = shift @cleanups) {
-	&$cleanup();
+        &$cleanup();
     }
     $SIG{$sig} = "DEFAULT";
     kill $sig, $$;
@@ -75,12 +75,12 @@ sub die_from_signal {
 # Wait for $child_pid to die, escalating to SIGKILL if it takes too long.
 sub reap_child {
     for (my $i = 0; $i < 20; ++$i) {
-	my $r = waitpid($child_pid, POSIX::WNOHANG());
-	if ($r != 0) {
-	    undef $child_pid;
-	    return;
-	}
-	select(undef, undef, undef, 0.1);
+        my $r = waitpid($child_pid, POSIX::WNOHANG());
+        if ($r != 0) {
+            undef $child_pid;
+            return;
+        }
+        select(undef, undef, undef, 0.1);
     }
     kill "KILL", $child_pid;
     waitpid($child_pid, 0);
@@ -94,8 +94,8 @@ sub check_status {
     my $sig = $status & 127;
     $sig = ($status >> 8) - 128 if !$sig && ($status >> 8) > 128;
     foreach my $name (@interrupt_signals) {
-	&die_from_signal($name)
-	    if defined($signo{$name}) && $sig == $signo{$name};
+        &die_from_signal($name)
+            if defined($signo{$name}) && $sig == $signo{$name};
     }
     return $status;
 }
@@ -110,24 +110,24 @@ sub run_system {
     my $pid = fork();
     die("fork: $!") if !defined $pid;
     if (!$pid) {
-	$SIG{$_} = "DEFAULT" foreach @interrupt_signals;
-	if (defined($opt->{"chdir"}) && !chdir($opt->{"chdir"})) {
-	    print STDERR "$opt->{chdir}: $!\n";
-	    POSIX::_exit(127);
-	}
-	exec(@cmd) or print STDERR "$cmd[0]: $!\n";
-	POSIX::_exit(127);
+        $SIG{$_} = "DEFAULT" foreach @interrupt_signals;
+        if (defined($opt->{"chdir"}) && !chdir($opt->{"chdir"})) {
+            print STDERR "$opt->{chdir}: $!\n";
+            POSIX::_exit(127);
+        }
+        exec(@cmd) or print STDERR "$cmd[0]: $!\n";
+        POSIX::_exit(127);
     }
     $child_pid = $pid;
     my $status = -1;
     while (1) {
-	my $r = waitpid($pid, 0);
-	if ($r == $pid) {
-	    $status = $?;
-	    last;
-	} elsif ($r < 0 && $! != POSIX::EINTR()) {
-	    last;
-	}
+        my $r = waitpid($pid, 0);
+        if ($r == $pid) {
+            $status = $?;
+            last;
+        } elsif ($r < 0 && $! != POSIX::EINTR()) {
+            last;
+        }
     }
     undef $child_pid;
     return &check_status($status);
@@ -172,6 +172,22 @@ sub list_enabled {
 sub section_observed {
     my $self = shift;
     exists($self->{defs_seen}->{$_[0]});
+}
+
+# Forget everything a generation stored, so that the next generation from
+# the same rules starts fresh: memoized fixed rules, the no-duplicate lists,
+# and the counters behind rules ending in +. The rules themselves, the
+# fixed and no-duplicate markers, and the enabled sections stay.
+sub clear {
+    my $self = shift;
+    my $rules = $self->{rules};
+    foreach my $name (keys %$rules) {
+        delete $rules->{$name} if !ref($rules->{$name});
+    }
+    $self->{fixed}->{$_} = undef foreach keys %{$self->{fixed}};
+    $self->{nodup}->{$_} = [] foreach keys %{$self->{nodup}};
+    $self->{re} = undef;
+    $self;
 }
 
 sub read_rules {
